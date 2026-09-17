@@ -24,8 +24,6 @@ MySQL (업무 데이터)  ·  PostgreSQL + pgvector (임베딩)
 Spring AI 2.0 + OpenAI  ·  AWS S3  ·  JWT
 ```
 
-**왜 DB가 둘인가** — 업무 데이터는 관계형이라 MySQL이 맞고, 근로기준법 Q&A는 벡터 검색이 필요해 pgvector를 쓴다. 엔진이 달라 한 인스턴스에 얹을 수 없어서, 트래픽이 없는 현 단계에서는 PostgreSQL을 앱과 같은 서버에 직접 설치해 쓴다.
-
 ---
 
 ## 도메인

@@ -16,6 +16,12 @@
 
 <br>
 
+### [🔗 tothework.com](https://tothework.com)
+
+<sub>API 서버 · <code>api.tothework.com</code></sub>
+
+<br>
+
 [개발 배경](#개발-배경) · [핵심 기능](#핵심-기능) · [차별점](#차별점) · [기술 스택](#기술-스택) · [아키텍처](#아키텍처) · [ERD](#erd) · [설계 포인트](#주요-설계-포인트) · [API](#api-개요) · [실행](#로컬-실행)
 
 </div>
@@ -185,10 +191,35 @@ AI 엔드포인트에는 호출 제한이 걸려 있다(`global/ratelimit`). 비
 | **AI** | Spring AI 2.0, OpenAI `gpt-4.1-mini`, `text-embedding-3-small` | 임베딩 1536차원 |
 | **인증** | JWT (jjwt), OAuth2 | 리프레시 토큰은 DB에 해시로 보관 |
 | **스토리지** | AWS S3 | 프로필·매뉴얼 이미지 |
-| **배포** | EC2, RDS, nginx, systemd, Vercel(프론트) | |
 
 **왜 DB가 둘인가** — 업무 데이터는 관계형이라 MySQL이 맞고, 근로기준법 Q&A는 벡터 검색이 필요해 pgvector를 쓴다.
 엔진이 달라 한 인스턴스에 얹을 수 없어서, 트래픽이 없는 현 단계에서는 PostgreSQL을 앱과 같은 서버에 직접 설치해 쓴다.
+
+### 인프라 · 배포
+
+| 분류 | 사용 기술 | 비고 |
+|---|---|---|
+| **서버** | AWS EC2 (`ap-northeast-2`) | 앱 + PostgreSQL을 한 인스턴스에 둔다 |
+| **DB** | AWS RDS (MySQL 8) | 업무 데이터. 자동 백업·유지보수 창 위임 |
+| **스토리지** | AWS S3 | 프로필·매장·매뉴얼 이미지. key로 저장하고 URL은 조립 |
+| **모니터링** | Amazon CloudWatch | EC2 기본 지표(CPU·네트워크·디스크) + **CloudWatch Agent로 로그 수집** |
+| **프로세스 관리** | systemd | 전용 계정으로 실행, 부팅 시 자동 기동, 시크릿은 `EnvironmentFile` |
+| **리버스 프록시** | nginx | TLS 종료, `127.0.0.1:8080`으로 전달 |
+| **인증서** | Let's Encrypt (certbot) | `--nginx` 플러그인으로 발급·자동 갱신 |
+| **프론트엔드** | Vercel | [`tothework.com`](https://tothework.com) |
+| **운영 상태** | Spring Boot Actuator | `health`·`info`·`metrics`·`loggers`, **8081 루프백 전용** |
+| **로그** | Logback 파일 롤링 + journalctl | 50MB 단위, 30일 보관, 총 1GB 상한 |
+
+**두 포트를 나눈 이유** — Actuator의 `loggers`는 **로그 레벨을 런타임에 바꾸는 쓰기 엔드포인트**다.
+외부에 열리면 안 되는데, 인증을 붙이는 것보다 **아예 루프백에만 바인딩하는 쪽**이 확실하다.
+nginx가 8081을 프록시하지 않으므로, 상태 확인은 서버에 들어가서만 가능하다.
+
+**로그를 두 곳에 쌓는 이유** — 인스턴스 안에는 Logback이 파일로 남기고, CloudWatch Agent가 같은 로그를
+밖으로 보낸다. 파일만 있으면 **인스턴스를 잃는 순간 장애 직전의 로그도 함께 사라진다.**
+반대로 로컬 파일이 있어야 SSH로 들어가 바로 `tail`할 수 있다.
+
+**로그 상한을 건 이유** — 작은 인스턴스에서 로그가 디스크를 채우면 앱이 아니라 **서버가 죽는다.**
+총량 상한이 있어야 최악의 경우가 "오래된 로그 유실"에서 멈춘다.
 
 ---
 
@@ -213,6 +244,8 @@ AI 엔드포인트에는 호출 제한이 걸려 있다(`global/ratelimit`). 비
    [ RDS MySQL ]  [ PostgreSQL ]   [ AWS S3 ]   [ OpenAI API ]
     업무 데이터      + pgvector        이미지        LLM · 임베딩
                     (동일 EC2)
+
+   로그·지표 ──[ CloudWatch Agent ]──▶ [ Amazon CloudWatch ]
 ```
 
 애플리케이션은 **127.0.0.1에만 바인딩**되고, Actuator는 8081 루프백 전용이라 nginx가 프록시하지 않는다.

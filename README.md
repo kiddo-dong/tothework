@@ -423,7 +423,7 @@ N+1은 `@EntityGraph`와 `default_batch_fetch_size=100`으로 잡고,
 | 공지 | `/stores/{id}/notices` | 작성·조회, 읽음 처리, 확인 현황 |
 | 인수인계 | `/stores/{id}/handover-notes` | 작성·조회·수정·삭제 |
 | 매뉴얼 | `/stores/{id}/manuals` | CRUD, 이미지 업로드 |
-| 거래처 | `/stores/{id}/suppliers` | 거래처 CRUD, 품목 CRUD |
+| 발주(거래처) | `/stores/{id}/suppliers` | 발주(거래처) CRUD, 품목 CRUD |
 | 원가 | `/stores/{id}/menus`, `/menu-ingredients` | 재료·메뉴·레시피, 원가율 |
 | AI 상담 | `/labor-qa` | 단발 질문, 세션 생성·대화·삭제 |
 | 지식베이스 | `/labor-qa/admin` | 문서 적재 (관리자 토큰 필요) |

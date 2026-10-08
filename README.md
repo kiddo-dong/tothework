@@ -222,29 +222,6 @@ nginx가 8081을 프록시하지 않으므로, 상태 확인은 서버에 들어
 
 ![아키텍처](docs/images/architecture.png)
 
-```
-                  tothework.com
-                        │
-                    [ Vercel ]  프론트엔드
-                        │
-                        │  HTTPS
-                        ▼
-                api.tothework.com
-                        │
-                   [ nginx ]  TLS 종료 · 리버스 프록시
-                        │
-                        ▼
-          [ Spring Boot ]  127.0.0.1:8080        ← EC2
-                        │
-        ┌───────────────┼───────────────┬──────────────┐
-        ▼               ▼               ▼              ▼
-   [ RDS MySQL ]  [ PostgreSQL ]   [ AWS S3 ]   [ OpenAI API ]
-    업무 데이터      + pgvector        이미지        LLM · 임베딩
-                    (동일 EC2)
-
-   로그·지표 ──[ CloudWatch Agent ]──▶ [ Amazon CloudWatch ]
-```
-
 애플리케이션은 **127.0.0.1에만 바인딩**되고, Actuator는 8081 루프백 전용이라 nginx가 프록시하지 않는다.
 외부에서 접근 가능한 경로는 nginx를 통과한 것뿐이다.
 

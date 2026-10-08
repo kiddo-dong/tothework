@@ -47,6 +47,8 @@ class StoreMemberServiceTest {
     private static final Long STORE_ID = 1L;
     private static final Long USER_ID = 1L;
     private static final Long TARGET_MEMBER_ID = 20L;
+    /** 요청자(매니저) 자신의 멤버 id. setUp에서 manager에 넣는 값과 같아야 한다. */
+    private static final Long SELF_MEMBER_ID = 1L;
 
     private StoreMember manager;
     private StoreMember staffTarget;
@@ -164,6 +166,60 @@ class StoreMemberServiceTest {
         assertThat(staffTarget.getHourlyWage()).isEqualTo(12_000);
         assertThat(staffTarget.getStatus()).isEqualTo(MemberStatus.INACTIVE);
         assertThat(staffTarget.getTaxMode()).isEqualTo(TaxMode.WITHHOLDING_3_3);
+    }
+
+    /**
+     * 관리자 권한은 다른 사람을 관리하라고 준 것이지 자기 대우를 정하라고 준 것이 아니다. 매니저 자신의
+     * 행은 role이 MANAGER라 OWNER 검사를 통과하므로, 이 검사가 없으면 요청 한 번으로 자기 시급을 올릴 수 있다.
+     */
+    @Test
+    void updateMember_managerCannotRaiseTheirOwnWage() {
+        when(storeMemberRepository.findById(SELF_MEMBER_ID)).thenReturn(Optional.of(manager));
+        UpdateStoreMemberRequest request = new UpdateStoreMemberRequest(
+                null, null, 500_000, null, null, null, null);
+
+        assertThatThrownBy(() -> storeMemberService.updateMember(STORE_ID, SELF_MEMBER_ID, USER_ID, request))
+                .isInstanceOf(ForbiddenException.class)
+                .hasMessageContaining("본인의 시급");
+
+        assertThat(manager.getHourlyWage()).isEqualTo(12_000); // 실제로 오르지 않았어야 한다
+    }
+
+    /** 시급을 못 올리더라도 공제를 없애면 실수령액이 오른다. 같은 구멍이라 함께 막는다. */
+    @Test
+    void updateMember_managerCannotRemoveTheirOwnDeductions() {
+        when(storeMemberRepository.findById(SELF_MEMBER_ID)).thenReturn(Optional.of(manager));
+        UpdateStoreMemberRequest request = new UpdateStoreMemberRequest(
+                null, null, null, null, null, null, TaxMode.NONE);
+
+        assertThatThrownBy(() -> storeMemberService.updateMember(STORE_ID, SELF_MEMBER_ID, USER_ID, request))
+                .isInstanceOf(ForbiddenException.class)
+                .hasMessageContaining("공제");
+    }
+
+    @Test
+    void updateMember_managerCannotChangeTheirOwnRole() {
+        when(storeMemberRepository.findById(SELF_MEMBER_ID)).thenReturn(Optional.of(manager));
+        UpdateStoreMemberRequest request = new UpdateStoreMemberRequest(
+                MemberRole.STAFF, null, null, null, null, null, null);
+
+        assertThatThrownBy(() -> storeMemberService.updateMember(STORE_ID, SELF_MEMBER_ID, USER_ID, request))
+                .isInstanceOf(ForbiddenException.class)
+                .hasMessageContaining("본인의 역할");
+
+        assertThat(manager.getRole()).isEqualTo(MemberRole.MANAGER);
+    }
+
+    /** 직함은 금전·권한에 영향이 없다. 본인 것을 고치는 길을 함께 막아버리면 과하다. */
+    @Test
+    void updateMember_managerCanStillRenameThemselves() {
+        when(storeMemberRepository.findById(SELF_MEMBER_ID)).thenReturn(Optional.of(manager));
+        UpdateStoreMemberRequest request = new UpdateStoreMemberRequest(
+                null, "홀팀장", null, null, null, null, null);
+
+        StoreMemberResponse response = storeMemberService.updateMember(STORE_ID, SELF_MEMBER_ID, USER_ID, request);
+
+        assertThat(response.title()).isEqualTo("홀팀장");
     }
 
     @Test

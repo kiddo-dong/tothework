@@ -47,12 +47,13 @@ public class StoreMemberService {
     @Transactional
     public StoreMemberResponse updateMember(Long storeId, Long memberId, Long userId,
             UpdateStoreMemberRequest request) {
-        storeAuthorizationService.requireOwnerOrManager(storeId, userId);
+        StoreMember requester = storeAuthorizationService.requireOwnerOrManager(storeId, userId);
         StoreMember target = getStoreMember(storeId, memberId);
 
         if (target.getRole() == MemberRole.OWNER) {
             throw new ForbiddenException("매장 소유자 정보는 이 API로 변경할 수 없습니다.");
         }
+        rejectSelfServingEdit(requester, target, request);
         if (request.role() != null) {
             if (request.role() == MemberRole.OWNER) {
                 throw new ForbiddenException("소유권 이전은 이 API로 할 수 없습니다. 소유권 이전 기능을 이용해 주세요.");
@@ -111,6 +112,31 @@ public class StoreMemberService {
             throw new ForbiddenException("매장 소유자는 퇴사 처리할 수 없습니다.");
         }
         target.resign();
+    }
+
+    /**
+     * 관리자가 <b>자기 자신의</b> 급여·권한 관련 필드를 고치는 것을 막는다.
+     *
+     * <p>위의 OWNER 검사만으로는 부족하다. 매니저 자신의 행은 role이 MANAGER라 그 검사를 통과하므로,
+     * 매니저가 요청 한 번으로 자기 시급을 올리거나 공제를 없앨 수 있었다. 관리자 권한은 "다른 사람을
+     * 관리하라"고 준 것이지 자기 대우를 정하라고 준 것이 아니다.
+     *
+     * <p>직함·근무가능요일·주휴일은 금전과 권한에 영향이 없어 본인도 바꿀 수 있게 남겨둔다.
+     */
+    private void rejectSelfServingEdit(StoreMember requester, StoreMember target,
+            UpdateStoreMemberRequest request) {
+        if (!requester.getId().equals(target.getId())) {
+            return;
+        }
+        if (request.hourlyWage() != null || request.taxMode() != null) {
+            throw new ForbiddenException("본인의 시급과 공제 방식은 변경할 수 없습니다. 매장 소유자에게 요청해 주세요.");
+        }
+        if (request.role() != null) {
+            throw new ForbiddenException("본인의 역할은 변경할 수 없습니다.");
+        }
+        if (request.status() != null) {
+            throw new ForbiddenException("본인의 재직 상태는 이 API로 변경할 수 없습니다. 매장 나가기를 이용해 주세요.");
+        }
     }
 
     private StoreMember getStoreMember(Long storeId, Long memberId) {

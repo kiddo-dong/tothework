@@ -220,6 +220,8 @@ nginx가 8081을 프록시하지 않으므로, 상태 확인은 서버에 들어
 
 ## 아키텍처
 
+![아키텍처](docs/images/architecture.png)
+
 ```
                   tothework.com
                         │

@@ -17,6 +17,7 @@ import com.example.albam.global.file.S3Uploader;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.multipart.MultipartFile;
@@ -78,6 +79,7 @@ public class UserService {
      * 개인정보를 익명화한다 (soft delete). 활동 중인 매장이 있으면 먼저 나가야 한다.
      */
     /** S3 삭제는 트랜잭션 밖에서 한다 — 커밋 후에 지워도 되고, 커밋까지 커넥션을 붙잡을 이유가 없다. */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void withdraw(Long userId) {
         if (storeMemberRepository.existsByUserIdAndStatus(userId, MemberStatus.ACTIVE)) {
             throw new ConflictException("소속된 매장이 있으면 탈퇴할 수 없습니다. 매장을 먼저 나가거나 삭제해 주세요.");
@@ -99,6 +101,7 @@ public class UserService {
     }
 
     /** S3 업로드/삭제는 네트워크 호출이라 DB 트랜잭션 밖에서 수행한다. */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public UserResponse updateProfileImage(Long userId, MultipartFile image) {
         String uploadedKey = s3Uploader.upload(image, PROFILE_IMAGE_DIRECTORY);
         String[] previousImageKeyHolder = new String[1];
@@ -114,6 +117,7 @@ public class UserService {
         return response;
     }
 
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public UserResponse deleteProfileImage(Long userId) {
         String[] previousImageKeyHolder = new String[1];
         UserResponse response = new TransactionTemplate(transactionManager).execute(status -> {

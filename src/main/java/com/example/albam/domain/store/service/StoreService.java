@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.multipart.MultipartFile;
@@ -149,12 +150,14 @@ public class StoreService {
      *
      * <p>S3 업로드는 트랜잭션 밖에서 한다. 파일을 주고받는 동안 DB 커넥션을 붙잡지 않기 위함이다.
      */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public StoreResponse updateProfileImage(Long storeId, Long userId, MultipartFile image) {
         storeAuthorizationService.requireOwner(storeId, userId);
         String uploadedKey = s3Uploader.upload(image, STORE_IMAGE_DIRECTORY + "/" + storeId);
         return replaceProfileImage(storeId, uploadedKey);
     }
 
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public StoreResponse deleteProfileImage(Long storeId, Long userId) {
         storeAuthorizationService.requireOwner(storeId, userId);
         return replaceProfileImage(storeId, null);

@@ -55,9 +55,21 @@ Gradle 9 (Kotlin DSL, convention plugins) · JUnit 5 · Testcontainers
 | 서비스 | 상태 |
 |---|---|
 | laborqa | ✅ 대화 세션·RAG 답변·지식베이스 적재·탈퇴 정리. API 경로와 응답은 기존과 같다 |
-| identity · store · operations · workforce · bff | 예정 |
+| identity | ✅ 가입·이메일 인증·로그인·소셜 로그인·토큰 재발급(회전)·비밀번호·내 정보·탈퇴·프로필 사진 |
+| store · operations · workforce · bff | 예정 |
 
-laborqa의 `@CurrentUserId`는 identity(JWT 인증)를 옮긴 뒤에 실제 사용자로 채워진다.
+## 인증
+
+| 하는 일 | 위치 | 이유 |
+|---|---|---|
+| 토큰 형식·검증, 보안 필터, CORS, 401/403 응답 | `shared.security` | 서비스가 나뉘어도 각자 토큰을 검증할 수 있게 |
+| 토큰 발급, 사용자 저장, 요청마다 주체 채우기(`AuthenticatedUserLoader`) | `identity` | 사용자 데이터를 가진 곳 |
+| 로그인 없이 열 경로 | 각 서비스가 `PublicEndpoints` 빈으로 등록 | 공통 계층이 다른 서비스의 URL을 알 필요가 없다 |
+| 다른 서비스에 사용자 정보 제공 | `identity-api`의 `UserDirectory` → `UserSummary` | 엔티티 대신 필요한 값만 |
+
+토큰 형식(subject=userId, `email`·`type` 클레임)과 환경변수 이름은 기존과 같아, 전환해도 로그인한 사용자가 끊기지
+않는다. 여기에 토큰마다 고유 `jti`를 더했다. 없으면 같은 1초 안에 발급한 두 토큰이 똑같아져 회전이 무력해지고
+동시 로그인이 실패한다(기존 백엔드에도 있던 문제를 통합 테스트가 찾아냈다).
 
 ## 실행
 

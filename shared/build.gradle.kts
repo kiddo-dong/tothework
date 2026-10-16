@@ -10,8 +10,18 @@ dependencies {
     api("org.springframework.modulith:spring-modulith-api")
     api("org.springframework.boot:spring-boot-starter-webmvc")
     api("org.springframework.boot:spring-boot-starter-validation")
-    api("org.springframework.security:spring-security-core")
+    api("org.springframework.boot:spring-boot-starter-security")
     api("org.springframework.boot:spring-boot-starter-data-jdbc")
     api("org.flywaydb:flyway-core")
     implementation("org.flywaydb:flyway-mysql")
+
+    // 토큰 검증은 모든 서비스가 해야 하므로 공용으로 둔다. 발급은 identity만 한다.
+    api(libs.jjwt.api)
+    runtimeOnly(libs.jjwt.impl)
+    runtimeOnly(libs.jjwt.jackson)
+    testRuntimeOnly(libs.jjwt.impl)
+    testRuntimeOnly(libs.jjwt.jackson)
+
+    // 이미지 저장소. 프로필·매장·매뉴얼 사진을 여러 서비스가 올린다.
+    api(libs.aws.s3)
 }

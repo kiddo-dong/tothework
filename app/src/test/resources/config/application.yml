@@ -1,0 +1,7 @@
+# 테스트 전용 값. 운영 비밀값이 아니다. (main의 application.yml 위에 덮어쓴다)
+tothework:
+  jwt:
+    secret: test-secret-key-test-secret-key-test-secret-key-0123456789
+  storage:
+    s3:
+      bucket-name: test-bucket

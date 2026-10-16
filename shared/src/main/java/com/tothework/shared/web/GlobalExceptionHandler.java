@@ -8,6 +8,7 @@ import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
@@ -15,12 +16,13 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
 /**
  * 모든 서비스에 공통인 예외 → 응답 변환. 메시지와 code는 기존 백엔드와 같다.
  *
- * <p>인증 실패(BadCredentialsException)나 업로드 크기 초과처럼 특정 기능에 묶인 처리는 그 기능을 옮길 때
- * 해당 서비스 쪽에 추가한다.
+ * <p>로그인 실패와 업로드 오류도 여기서 처리한다. 여러 서비스가 같은 메시지를 내야 하는 공통 규칙이라서다.
  */
 @Slf4j
 @RestControllerAdvice
@@ -30,6 +32,26 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleBusinessException(BusinessException e) {
         return ResponseEntity.status(e.getErrorCode().getStatus())
                 .body(ApiResponse.error(e.getMessage(), e.getErrorCode().name()));
+    }
+
+    /** 로그인 실패. 계정이 없는 경우와 비밀번호가 틀린 경우를 구분하지 않아 계정 존재 여부를 드러내지 않는다. */
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ApiResponse<Void>> handleBadCredentials(BadCredentialsException e) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error("이메일 또는 비밀번호가 올바르지 않습니다."));
+    }
+
+    /** 업로드 파일 크기 초과. 한도는 spring.servlet.multipart.max-file-size(10MB). */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMaxUploadSize(MaxUploadSizeExceededException e) {
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+                .body(ApiResponse.error("업로드 파일이 최대 허용 크기(10MB)를 초과했습니다."));
+    }
+
+    @ExceptionHandler(MissingServletRequestPartException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMissingPart(MissingServletRequestPartException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error("필수 업로드 파일이 누락되었습니다: " + e.getRequestPartName()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

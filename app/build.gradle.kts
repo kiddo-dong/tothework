@@ -17,6 +17,10 @@ dependencies {
     testImplementation("org.springframework.modulith:spring-modulith-starter-test")
     testImplementation("org.springframework.modulith:spring-modulith-docs")
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
+    testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
+    testImplementation("org.springframework.security:spring-security-test")
+    // 메일 서버를 가짜로 바꾸려고 JavaMailSender 타입이 필요하다 (identity의 내부 의존성이라 직접 보이지 않는다)
+    testImplementation("org.springframework.boot:spring-boot-starter-mail")
     testImplementation("org.testcontainers:testcontainers-junit-jupiter")
     testImplementation("org.testcontainers:testcontainers-mysql")
 }

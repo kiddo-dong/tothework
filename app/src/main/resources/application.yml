@@ -9,6 +9,21 @@ spring:
     username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD:}
 
+  # 가입 인증·비밀번호 재설정 메일 (Gmail SMTP). 미설정이어도 기동은 되고 보내는 시점에만 실패한다.
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${GMAIL_USERNAME:}
+    password: ${GMAIL_APP_PASSWORD:}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
   # Spring AI (OpenAI) — 근로 상담과 스케줄 초안에 쓴다.
   ai:
     openai:
@@ -33,12 +48,32 @@ spring:
       republish-outstanding-events-on-restart: true
 
 management:
+  health:
+    mail:
+      enabled: false
   endpoints:
     web:
       exposure:
         include: health
 
 tothework:
+  jwt:
+    secret: ${JWT_SECRET}
+    access-token-expiration-ms: 900000        # 15분
+    refresh-token-expiration-ms: 1209600000   # 14일
+  web:
+    cors:
+      # 리프레시 토큰 쿠키 때문에 와일드카드를 쓸 수 없어 오리진을 나열한다.
+      allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  storage:
+    s3:
+      bucket-name: ${AWS_S3_BUCKET_NAME:}
+      region: ${AWS_REGION:ap-northeast-2}
+  identity:
+    base-url: ${APP_BASE_URL:http://127.0.0.1:8080}
+    frontend-url: ${APP_FRONTEND_URL:http://localhost:5173}
+    cookie-secure: ${COOKIE_SECURE:false}
+    unverified-retention-days: 7
   laborqa:
     # 실제 점수를 재 보고 정한 값이다. 자료에 있는 질문을 그대로 물으면 0.42, 돌려 말하면 0.30 근처였고,
     # 전혀 무관한 질문(날씨)이 0.27이었다. 간격이 좁아 문턱 하나로 깨끗이 가를 수 없어서, 낮게 두어 근거를

@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration(proxyBeanMethods = false)
 class IdentitySchemaConfig {
 
-    static final ServiceSchema SCHEMA = ServiceSchema.of("identity");
+    static final ServiceSchema SCHEMA = new ServiceSchema(IdentitySchema.NAME, "classpath:db/identity");
 
     @Bean
     Flyway identityFlyway(DataSource dataSource) {

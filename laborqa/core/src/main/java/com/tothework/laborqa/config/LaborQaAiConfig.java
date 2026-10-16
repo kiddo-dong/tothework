@@ -10,6 +10,7 @@ import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
+import com.tothework.shared.security.PublicEndpoints;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 @Configuration(proxyBeanMethods = false)
@@ -17,6 +18,15 @@ import org.springframework.jdbc.core.JdbcTemplate;
 class LaborQaAiConfig {
 
     private static final int EMBEDDING_DIMENSIONS = 1536; // text-embedding-3-small
+
+    /**
+     * 지식베이스 적재 API는 매장 역할로 보호할 수 없는 전역 자원이라, 로그인 대신 컨트롤러가 X-Admin-Token을 직접
+     * 검사한다. 와일드카드라 이 경로 아래 엔드포인트를 추가하면 인증 없이 열리니 토큰 검사를 함께 넣을 것.
+     */
+    @Bean
+    PublicEndpoints laborQaAdminEndpoints() {
+        return PublicEndpoints.of("/api/v1/labor-qa/admin/**");
+    }
 
     @Bean
     ChatClient laborQaChatClient(ChatClient.Builder chatClientBuilder) {

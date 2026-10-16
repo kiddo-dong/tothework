@@ -58,13 +58,26 @@ public class Workers {
         return worker(memberships.getMemberOfStore(storeId, memberId), lock(storeId, memberId));
     }
 
+    /** 재직 여부와 상관없이 이 매장의 멤버. 급여처럼 퇴사자도 조회할 수 있어야 하는 곳에서 쓴다. */
+    public Worker of(Long storeId, Long memberId) {
+        return worker(memberships.getMemberOfStore(storeId, memberId), termsOf(storeId, memberId));
+    }
+
     /** 재직자 전원. AI 스케줄 초안처럼 매장 전체를 놓고 판단할 때 쓴다. */
     public List<Worker> activeWorkersOf(Long storeId) {
-        List<Membership> active = memberships.findAllByStore(storeId).stream().filter(Membership::isActive).toList();
+        return workersOf(storeId, memberships.findAllByStore(storeId).stream().filter(Membership::isActive).toList());
+    }
+
+    /** 퇴사자를 포함한 매장 멤버 전원. 월간 인건비처럼 그 달에 일했다 나간 사람도 세야 할 때 쓴다. */
+    public List<Worker> allWorkersOf(Long storeId) {
+        return workersOf(storeId, memberships.findAllByStore(storeId));
+    }
+
+    private List<Worker> workersOf(Long storeId, List<Membership> members) {
         StorePolicy policy = storePolicies.policyOf(storeId);
-        Map<Long, UserSummary> users = userDirectory.findAll(active.stream().map(Membership::userId).toList());
+        Map<Long, UserSummary> users = userDirectory.findAll(members.stream().map(Membership::userId).toList());
         Map<Long, EmploymentTerms> terms = termsReader.ofStore(storeId);
-        return active.stream()
+        return members.stream()
                 .map(member -> new Worker(member,
                         terms.getOrDefault(member.memberId(), EmploymentTerms.defaultsFor(member.memberId(), storeId)),
                         users.get(member.userId()), policy))

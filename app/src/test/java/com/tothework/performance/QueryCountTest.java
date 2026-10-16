@@ -100,6 +100,25 @@ class QueryCountTest {
                 + yesterday);
     }
 
+    @Test
+    void monthlyDashboardDoesNotGrowWithTheNumberOfMembers() throws Exception {
+        assertConstantAsWorkersGrow("/api/v1/stores/" + storeId + "/dashboard?year=" + yesterday.getYear() + "&month="
+                + yesterday.getMonthValue());
+    }
+
+    @Test
+    void dailyAndWeeklyDashboardsDoNotGrowWithTheNumberOfMembers() throws Exception {
+        String daily = "/api/v1/stores/" + storeId + "/dashboard/daily?date=" + yesterday;
+        String weekly = "/api/v1/stores/" + storeId + "/dashboard/weekly?date=" + yesterday;
+        int dailyBefore = queriesOf(daily);
+        int weeklyBefore = queriesOf(weekly);
+        for (int i = 0; i < MORE; i++) {
+            addWorkerWithRecords();
+        }
+        assertThat(queriesOf(daily)).isEqualTo(dailyBefore);
+        assertThat(queriesOf(weekly)).isEqualTo(weeklyBefore);
+    }
+
     private void assertConstantAsWorkersGrow(String url) throws Exception {
         int before = queriesOf(url);
         for (int i = 0; i < MORE; i++) {

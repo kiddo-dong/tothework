@@ -22,7 +22,7 @@ class StorePolicyService implements StorePolicies {
         Map<java.time.DayOfWeek, StorePolicy.Hours> hours = store.getBusinessHours().entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, entry -> new StorePolicy.Hours(
                         entry.getValue().openTime(), entry.getValue().closeTime(), entry.getValue().closed())));
-        return new StorePolicy(store.getId(), store.isSmallBusiness(), store.getBreakPolicy(), Map.copyOf(hours),
+        return new StorePolicy(store.getId(), store.getName(), store.isSmallBusiness(), store.getBreakPolicy(), Map.copyOf(hours),
                 store.getPayday());
     }
 }

@@ -91,7 +91,7 @@ public final class TestWorkers {
                 weeklyHolidayDay);
         UserSummary user = new UserSummary(100L + memberId, "직원" + memberId, "m" + memberId + "@albam.dev", null,
                 birthDate);
-        StorePolicy policy = new StorePolicy(STORE_ID, smallBusiness, breakPolicy, businessHours, null);
+        StorePolicy policy = new StorePolicy(STORE_ID, "테스트 매장", smallBusiness, breakPolicy, businessHours, null);
         return new Worker(membership, terms, user, policy);
     }
 }

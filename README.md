@@ -61,8 +61,8 @@ Gradle 9 (Kotlin DSL, convention plugins) · JUnit 5 · Testcontainers
 | bff | ✅ 멤버 상세 조회·수정 조합, 홈 화면(내 하루 + 관리자 섹션) |
 | operations | ✅ 체크리스트·공지·인수인계·매뉴얼(이미지)·거래처(요일별 발주량)·메뉴 원가 |
 
-기존 백엔드의 API 117개(메서드·경로)가 모두 같은 자리에 있다. 남은 일은 기존 DB를 서비스별 스키마로 옮기는
-데이터 이전 스크립트다.
+기존 백엔드의 API 117개(메서드·경로)가 모두 같은 자리에 있다. 기존 DB는 [migration/](migration/README.md)의
+스크립트로 서비스별 스키마에 옮긴다(로컬 리허설 완료, 운영 데이터 리허설 전).
 
 홈 화면은 bff가 권한을 한 번 확인한 뒤 각 서비스의 조회 계약(`Schedules`·`Attendances`·`Payrolls`·`Notices`·
 `Checklists`·`HandoverNotes`·`Suppliers`·`JoinRequests`)을 부른다. 계약은 권한을 다시 확인하지 않는다. 트랜잭션으로

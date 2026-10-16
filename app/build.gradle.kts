@@ -11,6 +11,8 @@ dependencies {
     }
     implementation("org.springframework.boot:spring-boot-starter-webmvc")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
+    // API 문서(/swagger-ui.html). 기본은 꺼져 있고 SWAGGER_ENABLED=true일 때만 열린다.
+    implementation(libs.springdoc.webmvc.ui)
     // 모듈 간 이벤트의 발행 기록을 JDBC(MySQL)에 남긴다.
     implementation("org.springframework.modulith:spring-modulith-starter-jdbc")
 

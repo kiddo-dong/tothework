@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 /**
  * 모든 서비스에 공통인 예외 → 응답 변환. 메시지와 code는 기존 백엔드와 같다.
@@ -104,6 +105,15 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(ApiResponse.error("이미 존재하거나 다른 데이터가 참조 중이어서 처리할 수 없습니다.",
                         ErrorCode.CONFLICT.name()));
+    }
+
+    /**
+     * 없는 경로. 따로 받지 않으면 아래의 모든 예외 처리로 떨어져 500이 된다(로그인 없이 열린 경로 아래에서 오타가 나면
+     * 서버 오류처럼 보였다).
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleNoResource(NoResourceFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error("요청한 경로를 찾을 수 없습니다."));
     }
 
     @ExceptionHandler(Exception.class)

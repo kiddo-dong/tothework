@@ -42,9 +42,32 @@ Gradle 9 (Kotlin DSL, convention plugins) · JUnit 5 · Testcontainers
 지연 로딩·변경 감지·프록시가 없어 객체 그래프를 타고 다른 서비스로 결합이 새어 나가지 않는다.
 조회는 필요하면 SQL을 직접 쓴다.
 
+## 서비스 간 이벤트
+
+다른 서비스의 이벤트는 `@ApplicationModuleListener`로 받는다. 발행한 쪽 트랜잭션이 커밋된 뒤 **별도 트랜잭션에서
+비동기로** 실행되므로, 같은 트랜잭션을 전제하지 않는다. 처리하지 못한 이벤트는 `tw_shared.EVENT_PUBLICATION`에
+남아 재시작할 때 다시 전달된다 (Spring Modulith Event Publication Registry).
+
+예: identity가 탈퇴를 커밋하면 `UserWithdrawnEvent`를 받은 laborqa가 그 사용자의 상담 이력을 지운다.
+
+## 이식 현황
+
+| 서비스 | 상태 |
+|---|---|
+| laborqa | ✅ 대화 세션·RAG 답변·지식베이스 적재·탈퇴 정리. API 경로와 응답은 기존과 같다 |
+| identity · store · operations · workforce · bff | 예정 |
+
+laborqa의 `@CurrentUserId`는 identity(JWT 인증)를 옮긴 뒤에 실제 사용자로 채워진다.
+
 ## 실행
 
 ```bash
-./gradlew build          # 테스트 포함. DB 테스트는 Docker(Testcontainers)가 필요하다
+./gradlew build          # 테스트 포함. DB 테스트는 Docker(Testcontainers)로 빈 MySQL을 띄운다
 ./gradlew :app:bootRun   # DB_URL, DB_USERNAME, DB_PASSWORD 환경변수로 MySQL 접속
+```
+
+Docker가 없으면 로컬 MySQL로 테스트할 수 있다. 테이블은 `tw_*` 스키마에만 생긴다.
+
+```bash
+SPRING_PROFILES_ACTIVE=localdb DB_PASSWORD=... ./gradlew build
 ```

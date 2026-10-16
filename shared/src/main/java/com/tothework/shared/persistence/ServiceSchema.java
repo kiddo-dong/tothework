@@ -1,4 +1,4 @@
-package com.tothework.shared;
+package com.tothework.shared.persistence;
 
 import javax.sql.DataSource;
 import org.flywaydb.core.Flyway;

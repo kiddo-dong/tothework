@@ -2,13 +2,52 @@ spring:
   application:
     name: tothework
   datasource:
-    # 서비스마다 스키마(tw_identity, tw_store ...)가 따로 있다. 접속 URL에는 스키마를 지정하지 않는다.
-    url: ${DB_URL:jdbc:mysql://localhost:3306/?serverTimezone=Asia/Seoul}
+    # 서비스 테이블은 모두 자기 스키마(tw_identity, tw_store ...)를 명시해서 쓴다. 기본 데이터베이스인 tw_shared에는
+    # 스키마를 지정할 수 없는 공용 인프라 테이블(이벤트 발행 기록)만 들어간다. MySQL에서는 스키마가 곧 데이터베이스라
+    # Spring Modulith가 발행 기록 테이블의 스키마 지정을 지원하지 않기 때문이다.
+    url: ${DB_URL:jdbc:mysql://localhost:3306/tw_shared?createDatabaseIfNotExist=true&serverTimezone=Asia/Seoul}
     username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD:}
+
+  # Spring AI (OpenAI) — 근로 상담과 스케줄 초안에 쓴다.
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY:}
+      chat:
+        options:
+          model: gpt-4.1-mini
+          temperature: 0.3
+      embedding:
+        options:
+          model: text-embedding-3-small
+
+  modulith:
+    events:
+      # 발행 기록 테이블은 shared가 Flyway로 tw_shared에 만든다. Modulith가 직접 만들지 않게 한다.
+      jdbc:
+        schema-initialization:
+          enabled: false
+      # 끝난 발행 기록은 지운다. 미완료만 남아 재전달 대상이 된다.
+      completion-mode: delete
+      # 단일 인스턴스 배포라 재시작 때 미완료 이벤트를 다시 보낸다. 여러 대로 늘리면 끄고 다른 방식으로 재전달할 것.
+      republish-outstanding-events-on-restart: true
 
 management:
   endpoints:
     web:
       exposure:
         include: health
+
+tothework:
+  laborqa:
+    # 실제 점수를 재 보고 정한 값이다. 자료에 있는 질문을 그대로 물으면 0.42, 돌려 말하면 0.30 근처였고,
+    # 전혀 무관한 질문(날씨)이 0.27이었다. 간격이 좁아 문턱 하나로 깨끗이 가를 수 없어서, 낮게 두어 근거를
+    # 최대한 붙여 보내고 그걸로 답할지는 프롬프트가 판단하게 한다.
+    similarity-threshold: ${LABOR_QA_SIMILARITY_THRESHOLD:0.28}
+    top-k: ${LABOR_QA_TOP_K:5}
+    # 지식베이스 적재 API(POST /api/v1/labor-qa/admin/ingest) 호출용 토큰. 비어 있으면 그 API는 열리지 않는다.
+    admin-ingest-token: ${ADMIN_INGEST_TOKEN:}
+    vector-store:
+      url: ${VECTOR_DB_URL:jdbc:postgresql://localhost:5432/albam_vector}
+      username: ${VECTOR_DB_USERNAME:albam_app}
+      password: ${VECTOR_DB_PASSWORD:}

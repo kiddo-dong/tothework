@@ -11,6 +11,8 @@ dependencies {
     }
     implementation("org.springframework.boot:spring-boot-starter-webmvc")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
+    // 모듈 간 이벤트의 발행 기록을 JDBC(MySQL)에 남긴다.
+    implementation("org.springframework.modulith:spring-modulith-starter-jdbc")
 
     testImplementation("org.springframework.modulith:spring-modulith-starter-test")
     testImplementation("org.springframework.modulith:spring-modulith-docs")

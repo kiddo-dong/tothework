@@ -11,9 +11,9 @@ dependencies {
     api(project(":$serviceName-api"))
     implementation(project(":shared"))
 
-    implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
-    implementation("org.springframework.boot:spring-boot-starter-validation")
-    implementation("org.flywaydb:flyway-core")
-    implementation("org.flywaydb:flyway-mysql")
+    // 웹·검증·Spring Data JDBC·Flyway는 shared를 통해 들어온다.
+    implementation("org.springframework.modulith:spring-modulith-events-api")
     runtimeOnly("com.mysql:mysql-connector-j")
+
+    testImplementation("org.springframework.modulith:spring-modulith-starter-test")
 }

@@ -1,6 +1,6 @@
 package com.tothework.store.config;
 
-import com.tothework.shared.ServiceSchema;
+import com.tothework.shared.persistence.ServiceSchema;
 import javax.sql.DataSource;
 import org.flywaydb.core.Flyway;
 import org.springframework.context.annotation.Bean;

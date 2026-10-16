@@ -1,6 +1,6 @@
 package com.tothework.laborqa.config;
 
-import com.tothework.shared.ServiceSchema;
+import com.tothework.shared.persistence.ServiceSchema;
 import javax.sql.DataSource;
 import org.flywaydb.core.Flyway;
 import org.springframework.context.annotation.Bean;
@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration(proxyBeanMethods = false)
 class LaborqaSchemaConfig {
 
-    static final ServiceSchema SCHEMA = ServiceSchema.of("laborqa");
+    static final ServiceSchema SCHEMA = new ServiceSchema(LaborQaSchema.NAME, "classpath:db/laborqa");
 
     @Bean
     Flyway laborqaFlyway(DataSource dataSource) {

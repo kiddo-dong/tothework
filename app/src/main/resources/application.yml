@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: tothework
+  datasource:
+    # 서비스마다 스키마(tw_identity, tw_store ...)가 따로 있다. 접속 URL에는 스키마를 지정하지 않는다.
+    url: ${DB_URL:jdbc:mysql://localhost:3306/?serverTimezone=Asia/Seoul}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

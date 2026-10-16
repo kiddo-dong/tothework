@@ -3,6 +3,38 @@
 기존 백엔드(`albam`)를 MSA로 갈 수 있는 모듈러 모놀리스로 다시 짓는 프로젝트.
 배포 단위는 하나이고, 나중에 서비스로 떼어 낼 단위(서비스 후보)마다 코드·스키마·마이그레이션을 따로 둔다.
 
+## 기존 구조와 무엇이 다른가
+
+이 저장소의 브랜치는 리팩토링의 세 시점이다. 같은 기능, 같은 API(117개)를 세 가지 구조로 담고 있다.
+
+| 브랜치 | 구조 | 한 줄 요약 |
+|---|---|---|
+| [`layered`](https://github.com/kiddo-dong/tothework/tree/layered) | 레이어드 | 출발점. 기능 패키지 안에 controller·service·repository·entity |
+| [`modulith`](https://github.com/kiddo-dong/tothework/tree/modulith) | 모듈 경계를 건 레이어드 | 같은 코드에 Spring Modulith로 경계를 걸고 위반 962건 → 0건 |
+| `main` | 모듈러 모놀리스 (이 문서) | 서비스 후보별로 코드·스키마·빌드를 나눠 다시 지음 |
+
+| | `layered` | `main` |
+|---|---|---|
+| 빌드 | Maven 단일 모듈 | Gradle 멀티 프로젝트 — 서비스마다 `api`·`core` |
+| 패키지 | `domain/<기능>/{controller,service,repository,entity,dto}` 16개 + 공용 `global` | `<서비스>/api`(계약) · `<서비스>/core`(구현) |
+| 경계 | 없음. 어느 기능이든 다른 기능의 엔티티·저장소를 쓸 수 있다 | 다른 서비스의 `core` 의존은 빌드 설정 단계에서 실패 |
+| 영속성 | JPA, 엔티티 사이 연관관계(`StoreMember → Store → …`) | Spring Data JDBC, 애그리거트 사이는 id 참조 |
+| DB | 한 스키마(`al-bam`), 테이블 사이 외래키·CASCADE·JOIN | 서비스마다 스키마(`tw_*`), 서비스를 넘는 외래키·JOIN 없음 |
+| 서비스 간 협력 | 다른 기능의 서비스·엔티티 직접 호출, 같은 트랜잭션 | `api`의 인터페이스·레코드, 비동기 이벤트(발행 기록 저장) |
+
+모듈 경계를 처음 측정했을 때(`modulith` 브랜치의 첫 커밋) `layered`의 코드에는 경계 위반이 962건, 그중 순환이
+27건 있었다. `modulith`에서 그 위반을 0으로 줄였지만, 그 위에서도 남는 결합이 있어 다시 짓기로 했다.
+
+- **한 엔티티에 두 서비스의 데이터.** `StoreMember`에 소속(역할·상태)과 고용 조건(시급·공제·주휴일)이 함께 있었다.
+  `main`에서는 소속은 `store`, 고용 조건은 `workforce`가 같은 memberId로 따로 갖는다.
+- **다른 서비스의 행을 잠그는 동시성 제어.** 스케줄 쓰기를 줄 세우려고 store의 소속 행을 잠갔다. `main`에서는
+  workforce가 가진 고용 조건 행을 잠근다.
+- **서비스를 넘는 외래키·CASCADE·JOIN.** 예를 들어 매장 삭제가 CASCADE로 근태·급여까지 지웠다. `main`에서는 store가
+  삭제 이벤트를 내고 각 서비스가 자기 데이터를 지운다.
+
+다시 지으며 찾아 고친 문제(같은 1초에 발급한 토큰이 똑같아지는 버그, 동시 요청의 교착, 목록 API의 N+1 등)는 각
+설계 문서에 있다. 기존 DB는 [migration/](migration/README.md)의 스크립트로 옮긴다.
+
 ## 서비스 후보
 
 | 서비스 | 성격 | 스키마 |

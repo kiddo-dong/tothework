@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @RequiredArgsConstructor
-class UserWithdrawalListener {
+class LaborQaWithdrawalListener {
 
     private final LaborQaSessionRepository sessionRepository;
     private final LaborQaMessageRepository messageRepository;

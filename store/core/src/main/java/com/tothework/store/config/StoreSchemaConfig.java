@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration(proxyBeanMethods = false)
 class StoreSchemaConfig {
 
-    static final ServiceSchema SCHEMA = ServiceSchema.of("store");
+    static final ServiceSchema SCHEMA = new ServiceSchema(StoreSchema.NAME, "classpath:db/store");
 
     @Bean
     Flyway storeFlyway(DataSource dataSource) {

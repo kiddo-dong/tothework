@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration(proxyBeanMethods = false)
 class WorkforceSchemaConfig {
 
-    static final ServiceSchema SCHEMA = ServiceSchema.of("workforce");
+    static final ServiceSchema SCHEMA = new ServiceSchema(WorkforceSchema.NAME, "classpath:db/workforce");
 
     @Bean
     Flyway workforceFlyway(DataSource dataSource) {

@@ -1,6 +1,9 @@
 package com.tothework.workforce.shift;
 
+import com.tothework.identity.api.UserSummary;
 import com.tothework.shared.error.InvalidRequestException;
+import com.tothework.workforce.api.ShiftResponse;
+import com.tothework.workforce.api.ShiftStatus;
 import com.tothework.workforce.config.WorkforceSchema;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -62,6 +65,13 @@ public class Shift {
         this.endTime = endTime;
         this.breakMinutes = breakMinutes;
         this.status = status;
+    }
+
+    /** @param user 응답에 이름·사진을 채울 사용자. 못 찾았으면 null */
+    public ShiftResponse toResponse(UserSummary user) {
+        return new ShiftResponse(id, memberId, user == null ? null : user.name(),
+                user == null ? null : user.profileImageUrl(), workDate, startTime, endTime, isOvernight(), breakMinutes,
+                status);
     }
 
     public boolean isCanceled() {

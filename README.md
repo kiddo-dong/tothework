@@ -58,8 +58,15 @@ Gradle 9 (Kotlin DSL, convention plugins) · JUnit 5 · Testcontainers
 | identity | ✅ 가입·이메일 인증·로그인·소셜 로그인·토큰 재발급(회전)·비밀번호·내 정보·탈퇴·프로필 사진 |
 | store | ✅ 매장·영업시간·온보딩·초대 코드·소유권 이전·삭제(유예 후 완전 삭제)·소속·가입 신청 |
 | workforce | ✅ 고용 조건·스케줄(템플릿·반복·AI 초안)·근태(리포트)·연차·급여(명세서·예상 급여)·대시보드 |
-| bff | 🟡 멤버 상세 조회·수정 조합. 홈 화면은 예정 |
+| bff | ✅ 멤버 상세 조회·수정 조합, 홈 화면(내 하루 + 관리자 섹션) |
 | operations | ✅ 체크리스트·공지·인수인계·매뉴얼(이미지)·거래처(요일별 발주량)·메뉴 원가 |
+
+기존 백엔드의 API 117개(메서드·경로)가 모두 같은 자리에 있다. 남은 일은 기존 DB를 서비스별 스키마로 옮기는
+데이터 이전 스크립트다.
+
+홈 화면은 bff가 권한을 한 번 확인한 뒤 각 서비스의 조회 계약(`Schedules`·`Attendances`·`Payrolls`·`Notices`·
+`Checklists`·`HandoverNotes`·`Suppliers`·`JoinRequests`)을 부른다. 계약은 권한을 다시 확인하지 않는다. 트랜잭션으로
+묶지 않으므로 서비스마다 조금 다른 시점의 값일 수 있다(화면용 조회라 괜찮다).
 
 설계 문서: [store](docs/design/store.md), [workforce](docs/design/workforce.md), [operations](docs/design/operations.md)
 

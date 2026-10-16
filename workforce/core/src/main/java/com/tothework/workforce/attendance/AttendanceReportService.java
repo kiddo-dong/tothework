@@ -4,6 +4,7 @@ import com.tothework.identity.api.UserSummary;
 import com.tothework.shared.error.ForbiddenException;
 import com.tothework.store.api.Membership;
 import com.tothework.store.api.StoreAccess;
+import com.tothework.workforce.api.WorkComplianceStatus;
 import com.tothework.workforce.employment.Workers;
 import com.tothework.workforce.leave.LeaveUsage;
 import com.tothework.workforce.leave.LeaveUsageRepository;
@@ -49,7 +50,11 @@ public class AttendanceReportService {
         if (!selfOnly && !requester.isOwnerOrManager()) {
             throw new ForbiddenException("매장 관리자만 다른 멤버의 근태 리포트를 조회할 수 있습니다.");
         }
+        return reportOf(storeId, storeMemberId, from, to);
+    }
 
+    /** 권한 확인 없는 리포트. 호출한 쪽이 이미 확인했을 때(홈 화면 등) 쓴다. storeMemberId가 null이면 매장 전체. */
+    public List<AttendanceReportEntry> reportOf(Long storeId, Long storeMemberId, LocalDate from, LocalDate to) {
         // 같은 workforce 안의 데이터라 저장소를 직접 읽는다. 취소된 스케줄은 근무 예정이 아니므로 뺀다.
         List<Shift> shifts;
         List<Attendance> attendances;

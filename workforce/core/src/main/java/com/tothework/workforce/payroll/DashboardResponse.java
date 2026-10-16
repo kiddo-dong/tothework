@@ -1,8 +1,8 @@
 package com.tothework.workforce.payroll;
 
-import com.tothework.workforce.attendance.WorkComplianceStatus;
 import com.tothework.store.api.MemberRole;
 import com.tothework.store.api.MemberStatus;
+import com.tothework.workforce.api.WorkComplianceStatus;
 import java.util.List;
 import java.util.Map;
 

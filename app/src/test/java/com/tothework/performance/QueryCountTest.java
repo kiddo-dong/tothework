@@ -119,6 +119,25 @@ class QueryCountTest {
         assertThat(queriesOf(weekly)).isEqualTo(weeklyBefore);
     }
 
+    /** 홈은 세 서비스를 조합한다. 오늘 근무자가 늘어도 각 서비스에 한 번씩만 물어야 한다. */
+    @Test
+    void homeDoesNotGrowWithTodaysWorkers() throws Exception {
+        addTodayShiftForNewWorker();
+        String url = "/api/v1/stores/" + storeId + "/home";
+        int before = queriesOf(url);
+        for (int i = 0; i < MORE; i++) {
+            addTodayShiftForNewWorker();
+        }
+        assertThat(queriesOf(url)).isEqualTo(before);
+    }
+
+    private void addTodayShiftForNewWorker() throws Exception {
+        Account worker = accounts.create("알바");
+        long memberId = stores.join(storeId, owner, worker);
+        shiftService.createShift(storeId, owner.userId(), new CreateShiftRequest(memberId, LocalDate.now(),
+                LocalTime.of(8, 0), LocalTime.of(12, 30), null));
+    }
+
     private void assertConstantAsWorkersGrow(String url) throws Exception {
         int before = queriesOf(url);
         for (int i = 0; i < MORE; i++) {

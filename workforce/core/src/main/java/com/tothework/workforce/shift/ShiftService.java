@@ -6,6 +6,8 @@ import com.tothework.shared.error.NotFoundException;
 import com.tothework.store.api.BreakPolicy;
 import com.tothework.store.api.StoreAccess;
 import com.tothework.store.api.StorePolicy;
+import com.tothework.workforce.api.ShiftResponse;
+import com.tothework.workforce.api.ShiftStatus;
 import com.tothework.workforce.employment.Worker;
 import com.tothework.workforce.employment.Workers;
 import com.tothework.workforce.labor.LaborStandards;
@@ -48,7 +50,7 @@ public class ShiftService {
                 request.breakMinutes(), null, null);
         Shift shift = shiftRepository.save(Shift.schedule(target.memberId(), storeId, request.workDate(),
                 request.startTime(), request.endTime(), breakMinutes));
-        return ShiftResponse.of(shift, target.user());
+        return shift.toResponse(target.user());
     }
 
     /**
@@ -105,7 +107,7 @@ public class ShiftService {
                 Shift shift = shiftRepository.save(Shift.schedule(target.memberId(), storeId, date,
                         request.startTime(), request.endTime(), breakMinutes));
                 memberShiftsCache.add(shift);
-                created.add(ShiftResponse.of(shift, target.user()));
+                created.add(shift.toResponse(target.user()));
             } catch (InvalidRequestException e) {
                 skipped.add(new SkippedShiftDate(date, e.getMessage()));
             }
@@ -125,7 +127,7 @@ public class ShiftService {
         }
         Map<Long, UserSummary> people = workers.profilesOf(storeId,
                 shifts.stream().map(Shift::getMemberId).distinct().toList());
-        return shifts.stream().map(shift -> ShiftResponse.of(shift, people.get(shift.getMemberId()))).toList();
+        return shifts.stream().map(shift -> shift.toResponse(people.get(shift.getMemberId()))).toList();
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
@@ -145,7 +147,7 @@ public class ShiftService {
                     request.breakMinutes(), shiftId, null);
         }
         shift.update(request.workDate(), request.startTime(), request.endTime(), breakMinutes, request.status());
-        return ShiftResponse.of(shiftRepository.save(shift), member.user());
+        return shiftRepository.save(shift).toResponse(member.user());
     }
 
     @Transactional

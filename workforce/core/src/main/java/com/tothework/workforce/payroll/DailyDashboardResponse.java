@@ -1,6 +1,6 @@
 package com.tothework.workforce.payroll;
 
-import com.tothework.workforce.attendance.WorkComplianceStatus;
+import com.tothework.workforce.api.WorkComplianceStatus;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;

@@ -2,11 +2,12 @@ package com.tothework.workforce.payroll;
 
 import com.tothework.store.api.MemberStatus;
 import com.tothework.store.api.StoreAccess;
+import com.tothework.workforce.api.Payrolls;
+import com.tothework.workforce.api.WorkComplianceStatus;
 import com.tothework.workforce.attendance.Attendance;
 import com.tothework.workforce.attendance.AttendanceReportEntry;
 import com.tothework.workforce.attendance.AttendanceReportService;
 import com.tothework.workforce.attendance.AttendanceRepository;
-import com.tothework.workforce.attendance.WorkComplianceStatus;
 import com.tothework.workforce.employment.Worker;
 import com.tothework.workforce.employment.Workers;
 import com.tothework.workforce.labor.LaborStandards;
@@ -52,8 +53,26 @@ public class StoreDashboardService {
     public DashboardResponse getDashboard(Long storeId, Long userId, int year, int month) {
         YearMonth yearMonth = MonthlyPay.monthOf(year, month);
         storeAccess.requireOwnerOrManager(storeId, userId);
-        LocalDate monthStart = yearMonth.atDay(1);
-        LocalDate monthEnd = yearMonth.atEndOfMonth();
+        MonthlyCosts costs = monthlyCosts(storeId, yearMonth);
+        Map<WorkComplianceStatus, Long> attendanceSummary = complianceSummary(attendanceReportService
+                .reportOf(storeId, null, yearMonth.atDay(1), yearMonth.atEndOfMonth()));
+        return new DashboardResponse(year, month, costs.activeMemberCount(), costs.totalWorkMinutes(),
+                costs.totalLaborCost(), costs.totalDeduction(), costs.totalLaborCost() - costs.totalDeduction(),
+                attendanceSummary, costs.rows());
+    }
+
+    /** 권한 확인 없는 월 인건비 합계. 홈 화면처럼 부르는 쪽이 이미 확인했을 때 쓴다. 근태 요약은 계산하지 않는다. */
+    Payrolls.LaborCost laborCostOf(Long storeId, YearMonth yearMonth) {
+        MonthlyCosts costs = monthlyCosts(storeId, yearMonth);
+        return new Payrolls.LaborCost(costs.totalLaborCost(), costs.totalLaborCost() - costs.totalDeduction());
+    }
+
+    private record MonthlyCosts(int activeMemberCount, long totalWorkMinutes, long totalLaborCost,
+            long totalDeduction, List<MemberCostRow> rows) {
+    }
+
+    /** 멤버별 월 비용. 매장 전체의 근태·스케줄·연차를 한 번씩 읽고 멤버별로 나눠 계산한다. */
+    private MonthlyCosts monthlyCosts(Long storeId, YearMonth yearMonth) {
         LocalDate fetchFrom = MonthlyPay.fetchFrom(yearMonth);
         LocalDate fetchTo = MonthlyPay.fetchTo(yearMonth);
 
@@ -65,7 +84,7 @@ public class StoreDashboardService {
         Map<Long, List<Shift>> shiftsByMember = activeShiftsOf(storeId, fetchFrom, fetchTo).stream()
                 .collect(Collectors.groupingBy(Shift::getMemberId));
         Map<Long, Long> leaveDaysByMember = leaveUsageRepository
-                .findAllByStoreIdAndLeaveDateBetween(storeId, monthStart, monthEnd).stream()
+                .findAllByStoreIdAndLeaveDateBetween(storeId, yearMonth.atDay(1), yearMonth.atEndOfMonth()).stream()
                 .collect(Collectors.groupingBy(LeaveUsage::getMemberId, Collectors.counting()));
 
         long totalWorkMinutes = 0;
@@ -95,16 +114,13 @@ public class StoreDashboardService {
                     workMinutes, pay.totalPay(), pay.netPay()));
         }
         rows.sort((a, b) -> Long.compare(b.totalPay(), a.totalPay()));
-        Map<WorkComplianceStatus, Long> attendanceSummary = complianceSummary(
-                attendanceReportService.getReport(storeId, userId, null, monthStart, monthEnd));
-        return new DashboardResponse(year, month, activeMemberCount, totalWorkMinutes, totalLaborCost,
-                totalDeduction, totalLaborCost - totalDeduction, attendanceSummary, rows);
+        return new MonthlyCosts(activeMemberCount, totalWorkMinutes, totalLaborCost, totalDeduction, rows);
     }
 
     /** 일일 대시보드: 그날의 근무·근태 요약 (금액 없음). */
     public DailyDashboardResponse getDailyDashboard(Long storeId, Long userId, LocalDate date) {
         storeAccess.requireOwnerOrManager(storeId, userId);
-        List<AttendanceReportEntry> report = attendanceReportService.getReport(storeId, userId, null, date, date);
+        List<AttendanceReportEntry> report = attendanceReportService.reportOf(storeId, null, date, date);
         Map<Long, Attendance> attendanceById = attendanceRepository
                 .findAllByStoreIdAndWorkDateBetweenOrderByWorkDateDesc(storeId, date, date).stream()
                 .collect(Collectors.toMap(Attendance::getId, Function.identity()));
@@ -171,7 +187,7 @@ public class StoreDashboardService {
         }
         rows.sort(Comparator.comparingLong(WeeklyMemberRow::projectedMinutes).reversed());
         Map<WorkComplianceStatus, Long> summary = complianceSummary(
-                attendanceReportService.getReport(storeId, userId, null, weekStart, weekEnd));
+                attendanceReportService.reportOf(storeId, null, weekStart, weekEnd));
         long totalActual = rows.stream().mapToLong(WeeklyMemberRow::actualMinutes).sum();
         long totalProjected = rows.stream().mapToLong(WeeklyMemberRow::projectedMinutes).sum();
         return new WeeklyDashboardResponse(weekStart, weekEnd, totalActual, totalProjected, summary, rows);

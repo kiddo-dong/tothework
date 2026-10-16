@@ -1,5 +1,6 @@
 package com.tothework.workforce.attendance;
 
+import com.tothework.workforce.api.WorkComplianceStatus;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;

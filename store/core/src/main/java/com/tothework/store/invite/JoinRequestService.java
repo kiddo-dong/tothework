@@ -7,6 +7,7 @@ import com.tothework.shared.error.ForbiddenException;
 import com.tothework.shared.error.InvalidRequestException;
 import com.tothework.shared.error.NotFoundException;
 import com.tothework.shared.storage.S3Uploader;
+import com.tothework.store.api.JoinRequests;
 import com.tothework.store.api.MemberRole;
 import com.tothework.store.api.MemberStatus;
 import com.tothework.store.api.StoreAccess;
@@ -26,7 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class JoinRequestService {
+public class JoinRequestService implements JoinRequests {
 
     private final JoinRequestRepository joinRequestRepository;
     private final StoreRepository storeRepository;
@@ -98,6 +99,7 @@ public class JoinRequestService {
         return toResponses(List.of(joinRequestRepository.save(joinRequest))).getFirst();
     }
 
+    @Override
     public long countPending(Long storeId) {
         return joinRequestRepository.countByStoreIdAndStatus(storeId, JoinRequestStatus.PENDING);
     }

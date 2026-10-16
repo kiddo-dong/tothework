@@ -16,6 +16,7 @@ import static org.mockito.Mockito.when;
 
 import com.tothework.shared.error.InvalidRequestException;
 import com.tothework.store.api.StoreAccess;
+import com.tothework.workforce.api.ShiftResponse;
 import com.tothework.workforce.employment.Worker;
 import com.tothework.workforce.employment.Workers;
 import java.time.DayOfWeek;

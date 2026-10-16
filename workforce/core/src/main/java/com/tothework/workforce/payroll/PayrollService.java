@@ -76,6 +76,11 @@ public class PayrollService {
                 result.weeklyHolidayPay(), pay.leavePay(), pay.totalPay(), pay.deduction(), pay.netPay());
     }
 
+    /** 권한 확인 없는 예상 실수령액. 홈 화면처럼 부르는 쪽이 이미 확인했을 때 쓴다. */
+    long estimateNetPay(Long storeId, Long memberId, YearMonth month) {
+        return monthlyPayOf(workers.of(storeId, memberId), month, true).netPay();
+    }
+
     /** 대상 멤버 + 접근 권한 확인 (본인 또는 매장 관리자). */
     private Worker authorizedTarget(Long storeId, Long memberId, Long userId) {
         Membership requester = storeAccess.requireMember(storeId, userId);

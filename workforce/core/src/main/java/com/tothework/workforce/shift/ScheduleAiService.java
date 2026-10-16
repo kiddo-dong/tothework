@@ -4,6 +4,7 @@ import com.tothework.shared.error.InvalidRequestException;
 import com.tothework.shared.error.NotFoundException;
 import com.tothework.store.api.StoreAccess;
 import com.tothework.store.api.StorePolicy;
+import com.tothework.workforce.api.ShiftResponse;
 import com.tothework.workforce.employment.Worker;
 import com.tothework.workforce.employment.Workers;
 import com.tothework.workforce.labor.LaborStandards;

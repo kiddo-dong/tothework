@@ -1,5 +1,6 @@
 package com.tothework.workforce.shift;
 
+import com.tothework.workforce.api.ShiftStatus;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;

@@ -1,6 +1,6 @@
-package com.tothework.workforce.attendance;
+package com.tothework.workforce.api;
 
-/** 스케줄 대비 실제 근태의 판정 결과. */
+/** 스케줄 대비 실제 근태의 판정 결과. 근태 리포트·대시보드·홈 화면 응답에 실리므로 계약에 둔다. */
 public enum WorkComplianceStatus {
     /** 정상 근무. */
     NORMAL,

@@ -59,9 +59,9 @@ Gradle 9 (Kotlin DSL, convention plugins) · JUnit 5 · Testcontainers
 | store | ✅ 매장·영업시간·온보딩·초대 코드·소유권 이전·삭제(유예 후 완전 삭제)·소속·가입 신청 |
 | workforce | ✅ 고용 조건·스케줄(템플릿·반복·AI 초안)·근태(리포트)·연차·급여(명세서·예상 급여)·대시보드 |
 | bff | 🟡 멤버 상세 조회·수정 조합. 홈 화면은 예정 |
-| operations | 예정 |
+| operations | ✅ 체크리스트·공지·인수인계·매뉴얼(이미지)·거래처(요일별 발주량)·메뉴 원가 |
 
-설계 문서: [store](docs/design/store.md), [workforce](docs/design/workforce.md)
+설계 문서: [store](docs/design/store.md), [workforce](docs/design/workforce.md), [operations](docs/design/operations.md)
 
 ## 인증
 

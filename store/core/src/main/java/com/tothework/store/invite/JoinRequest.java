@@ -58,14 +58,14 @@ public class JoinRequest {
                 null, null);
     }
 
-    void approve(MemberRole role) {
+    public void approve(MemberRole role) {
         validatePending();
         status = JoinRequestStatus.APPROVED;
         decidedRole = role;
         decidedAt = LocalDateTime.now();
     }
 
-    void reject() {
+    public void reject() {
         validatePending();
         status = JoinRequestStatus.REJECTED;
         decidedAt = LocalDateTime.now();

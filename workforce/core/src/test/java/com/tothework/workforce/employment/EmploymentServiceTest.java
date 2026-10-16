@@ -45,6 +45,7 @@ class EmploymentServiceTest {
     private static final Membership OWNER = membership(30L, 300L, MemberRole.OWNER);
 
     @Mock private MemberEmploymentRepository repository;
+    @Mock private EmploymentTermsReader termsReader;
     @Mock private StoreAccess storeAccess;
     @Mock private Memberships memberships;
 
@@ -57,7 +58,7 @@ class EmploymentServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new EmploymentService(repository, storeAccess, memberships);
+        service = new EmploymentService(repository, termsReader, storeAccess, memberships);
         staffEmployment = MemberEmployment.startFor(20L, STORE_ID);
         when(storeAccess.requireOwnerOrManager(STORE_ID, MANAGER_USER_ID)).thenReturn(MANAGER);
         when(memberships.getMemberOfStore(STORE_ID, 10L)).thenReturn(MANAGER);

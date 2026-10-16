@@ -13,8 +13,6 @@ import com.tothework.workforce.labor.LaborStandards;
 import java.time.DayOfWeek;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 class EmploymentService implements Employment {
 
     private final MemberEmploymentRepository repository;
+    private final EmploymentTermsReader termsReader;
     private final StoreAccess storeAccess;
     private final Memberships memberships;
 
@@ -40,9 +39,7 @@ class EmploymentService implements Employment {
 
     @Override
     public Map<Long, EmploymentTerms> termsOfStore(Long storeId) {
-        return repository.findAllByStoreId(storeId).stream()
-                .map(MemberEmployment::toTerms)
-                .collect(Collectors.toMap(EmploymentTerms::memberId, Function.identity()));
+        return termsReader.ofStore(storeId);
     }
 
     @Override

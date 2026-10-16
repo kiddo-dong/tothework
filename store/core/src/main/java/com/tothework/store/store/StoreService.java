@@ -35,6 +35,7 @@ public class StoreService {
     private static final String STORE_IMAGE_DIRECTORY = "store-images";
 
     private final StoreRepository storeRepository;
+    private final StoreListReader storeListReader;
     private final StoreMemberRepository memberRepository;
     private final MemberAdmission memberAdmission;
     private final StoreAccess storeAccess;
@@ -67,11 +68,11 @@ public class StoreService {
 
     public List<MyStoreResponse> getMyStores(Long userId) {
         List<StoreMember> memberships = memberRepository.findActiveOfUser(userId);
-        Map<Long, Store> stores = storeRepository.findAllById(memberships.stream().map(StoreMember::getStoreId).toList())
-                .stream().collect(Collectors.toMap(Store::getId, store -> store));
+        Map<Long, StoreResponse> stores = storeListReader.responsesOf(
+                memberships.stream().map(StoreMember::getStoreId).toList(), s3Uploader::toPublicUrl);
         return memberships.stream()
-                .map(member -> new MyStoreResponse(toResponse(stores.get(member.getStoreId())), member.getId(),
-                        member.getRole()))
+                .filter(member -> stores.containsKey(member.getStoreId()))
+                .map(member -> new MyStoreResponse(stores.get(member.getStoreId()), member.getId(), member.getRole()))
                 .toList();
     }
 

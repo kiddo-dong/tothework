@@ -19,9 +19,7 @@ class StoreEventListeners {
      */
     @ApplicationModuleListener
     void on(MemberJoinedEvent event) {
-        if (!repository.existsById(event.memberId())) {
-            repository.save(MemberEmployment.startFor(event.memberId(), event.storeId()));
-        }
+        repository.insertDefaultIfAbsent(event.memberId(), event.storeId());
     }
 
     /** 완전히 지워진 매장의 고용 조건을 지운다. */

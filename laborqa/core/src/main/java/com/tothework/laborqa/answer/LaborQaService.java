@@ -13,6 +13,7 @@ import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 /**
@@ -71,6 +72,8 @@ public class LaborQaService {
 
     /** 벡터 저장소는 처음 쓰일 때 접속하도록 지연 조회한다 (LaborQaAiConfig 참고). */
     private final ObjectProvider<VectorStore> vectorStoreProvider;
+    /** 서비스마다 자기 ChatClient를 갖는다 (workforce에는 스케줄 초안용이 따로 있다). */
+    @Qualifier("laborQaChatClient")
     private final ChatClient chatClient;
     private final LaborQaSessionService sessionService;
     private final LaborQaProperties properties;

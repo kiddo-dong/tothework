@@ -23,4 +23,8 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-mail")
     testImplementation("org.testcontainers:testcontainers-junit-jupiter")
     testImplementation("org.testcontainers:testcontainers-mysql")
+    // 요청 하나가 보내는 SQL 수를 센다 (N+1 회귀 검사)
+    testImplementation("net.ttddyy:datasource-proxy:1.11.1")
+    // 서비스 내부 패키지 방향 검사. Modulith가 쓰는 것과 같은 버전
+    testImplementation("com.tngtech.archunit:archunit:1.4.2")
 }

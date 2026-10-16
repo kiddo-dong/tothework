@@ -57,11 +57,11 @@ Gradle 9 (Kotlin DSL, convention plugins) · JUnit 5 · Testcontainers
 | laborqa | ✅ 대화 세션·RAG 답변·지식베이스 적재·탈퇴 정리. API 경로와 응답은 기존과 같다 |
 | identity | ✅ 가입·이메일 인증·로그인·소셜 로그인·토큰 재발급(회전)·비밀번호·내 정보·탈퇴·프로필 사진 |
 | store | ✅ 매장·영업시간·온보딩·초대 코드·소유권 이전·삭제(유예 후 완전 삭제)·소속·가입 신청 |
-| workforce | 🟡 고용 조건(시급·공제·주휴일·근무 가능 요일)만. 스케줄·근태·연차·급여는 예정 |
+| workforce | 🟡 고용 조건·스케줄(템플릿·반복·AI 초안)·근태(리포트)·연차. 급여·대시보드는 예정 |
 | bff | 🟡 멤버 상세 조회·수정 조합. 홈 화면은 예정 |
 | operations | 예정 |
 
-설계 문서: [store](docs/design/store.md)
+설계 문서: [store](docs/design/store.md), [workforce](docs/design/workforce.md)
 
 ## 인증
 

@@ -205,7 +205,7 @@ AI 엔드포인트에는 호출 제한이 걸려 있다(`shared/ratelimit`). 비
   삭제 이벤트를 내고 각 서비스가 자기 데이터를 지운다.
 
 다시 지으며 찾아 고친 문제(같은 1초에 발급한 토큰이 똑같아지는 버그, 동시 요청의 교착, 목록 API의 N+1 등)는 각
-설계 문서에 있다. 기존 DB는 [migration/](migration/README.md)의 스크립트로 옮긴다.
+설계 문서에 있다.
 
 ---
 
@@ -286,7 +286,6 @@ nginx가 8081을 프록시하지 않으므로, 상태 확인은 서버에 들어
 shared           공통 기반 (보안 필터, 에러 응답, S3, 호출 제한 — 도메인 개념 없음)
 bff              여러 서비스의 api를 조합
 app              모두를 하나의 프로세스로 조립하는 실행 모듈 (API 문서, 통합 테스트)
-migration        기존 al-bam DB → 서비스별 스키마 이전 스크립트
 ```
 
 ### 경계 규칙
@@ -601,7 +600,6 @@ SPRING_PROFILES_ACTIVE=localdb DB_PASSWORD=... ./gradlew build   # Docker가 없
 | **쿼리 수** | 데이터를 늘리기 전후 쿼리 수가 같은지 (datasource-proxy) | 거래처 목록을 품목마다 조회하게 바꾸면 9 → 12로 실패 |
 | **경계** | 다른 서비스 core 의존(빌드), 순환(Modulith), 서비스 안 패키지 방향(ArchUnit) | 역방향 참조를 넣으면 실패 |
 | **API 문서** | Swagger 문서에 117개 API가 모두 실리는지 | — |
-| **데이터 이전** | 기존 스키마 고정본 + 픽스처로 이전 스크립트를 돌려 테이블별 행 수·합계 대조 | 이전 구문 하나를 빼면 실패 |
 
 > N+1과 동시성 결함은 **코드를 읽어서는 드러나지 않고** 데이터 두어 건으로는 체감되지 않는다.
 > 그래서 재현 조건을 테스트가 직접 만든다.
@@ -619,9 +617,6 @@ scp app/build/libs/app-0.0.1-SNAPSHOT.jar ubuntu@<host>:/tmp/albam.jar
 **빌드는 로컬에서 한다.** 작은 인스턴스에서 Gradle을 돌리면 메모리가 모자란다.
 nginx 설정과 systemd 유닛은 [`deploy/`](deploy/)에 있다. 서비스 이름·계정·경로(`albam`)는 기존 서버 설정을 그대로
 쓰려고 옛 이름을 유지한다.
-
-> **레이어드 구조에서 처음 전환할 때**는 기존 DB를 서비스별 스키마로 옮겨야 한다. 순서(스냅샷 → 기존 앱 중지 →
-> 새 앱으로 스키마 생성 → `migration/migrate.sh` → 새 앱 기동)는 [`migration/README.md`](migration/README.md)에 있다.
 
 > **`APP_FRONTEND_URL`을 빠뜨리면 조용히 깨진다.** 기본값이 `localhost:5173`이라 기동은 되지만, 비밀번호 재설정 메일이 사용자 자기 PC를 가리키는 링크를 담아 나간다. 재설정 폼은 그 링크로만 갈 수 있어 계정 복구가 막힌다.
 
@@ -642,7 +637,6 @@ curl localhost:8081/actuator/health    # 서버에 SSH로 들어가서
 | [`docs/backend-prd.md`](docs/backend-prd.md) | 도메인·API·비즈니스 규칙 레퍼런스 |
 | [`docs/frontend-role-guide.md`](docs/frontend-role-guide.md) | 역할별 화면·API 매핑 |
 | [`docs/design/`](docs/design/) | 서비스별 설계와 옮기며 알게 된 것 (store · workforce · operations) |
-| [`migration/`](migration/README.md) | 기존 DB 이전 스크립트와 운영 순서 |
 | [`docs/http/`](docs/http/) | 흐름별 curl 스크립트 |
 
 ---

@@ -56,11 +56,6 @@ store는 identity의 `WithdrawalGuard`를 구현하고 `UserWithdrawnEvent`를 �
 | `getStoreMember().getUser().getName()` | `UserDirectory`로 일괄 조회 |
 | 가입 승인 시 `StoreMember`에 시급 0 저장 | `MemberJoinedEvent` → workforce가 기본 고용 조건 생성. 생성 전 조회는 기본값 |
 
-## 데이터 이전
-
-ID를 유지하고 `al-bam.store_members` 한 행을 `tw_store.store_members`와 `tw_workforce.employment_terms`
-두 행으로 나눠 복사한다.
-
 ## 남는 한계
 
 - 권한 확인과 `StorePolicies`는 요청마다 동기 호출이다. 서비스를 나눌 때 토큰에 소속 정보를 담거나 이벤트로

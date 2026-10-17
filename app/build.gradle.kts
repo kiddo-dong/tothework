@@ -30,8 +30,3 @@ dependencies {
     // 서비스 내부 패키지 방향 검사. Modulith가 쓰는 것과 같은 버전
     testImplementation("com.tngtech.archunit:archunit:1.4.2")
 }
-
-// 데이터 이전 스크립트는 모듈 밖(migration/)에 있지만 DataMigrationTest가 읽는다. 바뀌면 테스트를 다시 돌린다.
-tasks.test {
-    inputs.dir(rootProject.layout.projectDirectory.dir("migration")).withPropertyName("migrationScripts")
-}

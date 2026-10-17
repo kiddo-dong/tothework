@@ -1,4 +1,4 @@
-package com.tothework.store.store;
+package com.tothework.store.onboarding;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -9,6 +9,8 @@ import static org.mockito.Mockito.when;
 
 import com.tothework.store.api.BreakPolicy;
 import com.tothework.store.api.StoreAccess;
+import com.tothework.store.store.Store;
+import com.tothework.store.store.StoreRepository;
 import com.tothework.shared.error.InvalidRequestException;
 import java.util.HashMap;
 import java.util.Optional;

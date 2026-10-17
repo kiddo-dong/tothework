@@ -1,8 +1,10 @@
-package com.tothework.store.store;
+package com.tothework.store.onboarding;
 
 import com.tothework.shared.error.InvalidRequestException;
 import com.tothework.shared.error.NotFoundException;
 import com.tothework.store.api.StoreAccess;
+import com.tothework.store.store.Store;
+import com.tothework.store.store.StoreRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

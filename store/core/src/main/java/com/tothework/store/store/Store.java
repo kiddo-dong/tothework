@@ -59,7 +59,7 @@ public class Store {
     Store() {
     }
 
-    static Store open(String name, String address, String businessRegistrationNumber, StoreCategory category,
+    public static Store open(String name, String address, String businessRegistrationNumber, StoreCategory category,
             Map<DayOfWeek, BusinessHour> businessHours, String inviteCode, BreakPolicy breakPolicy,
             Boolean smallBusiness, Integer payday) {
         Store store = new Store();
@@ -91,12 +91,12 @@ public class Store {
     }
 
     /** 단계 하나를 확인 상태로 표시한다. 이미 표시돼 있으면 아무 일도 하지 않아 같은 요청이 여러 번 와도 결과가 같다. */
-    void confirmOnboardingStep(String stepKey) {
+    public void confirmOnboardingStep(String stepKey) {
         onboardingSteps.add(new OnboardingStep(stepKey));
     }
 
     /** 온보딩을 마친 것으로 표시한다. 이미 마쳤다면 처음 끝낸 시각을 유지한다. */
-    void completeOnboarding() {
+    public void completeOnboarding() {
         if (onboardingCompletedAt == null) {
             onboardingCompletedAt = LocalDateTime.now();
         }

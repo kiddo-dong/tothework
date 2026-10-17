@@ -1,5 +1,6 @@
-package com.tothework.store.store;
+package com.tothework.store.onboarding;
 
+import com.tothework.store.store.Store;
 import java.time.LocalDateTime;
 import java.util.List;
 

@@ -1,4 +1,4 @@
-package com.tothework.store.store;
+package com.tothework.store.onboarding;
 
 import com.tothework.shared.web.ApiResponse;
 import com.tothework.shared.security.CurrentUserId;

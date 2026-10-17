@@ -1,4 +1,4 @@
-package com.tothework.workforce.shift;
+package com.tothework.workforce.shift.template;
 
 import com.tothework.shared.web.ApiResponse;
 import com.tothework.shared.security.CurrentUserId;

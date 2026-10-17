@@ -1,4 +1,4 @@
-package com.tothework.workforce.shift;
+package com.tothework.workforce.shift.draft;
 
 import java.time.LocalDate;
 import java.time.LocalTime;

@@ -3,6 +3,7 @@ package com.tothework.workforce;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -31,6 +32,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.http.MediaType;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -158,15 +160,26 @@ class PayrollFlowTest {
         assertThat(payrollRows()).isEqualTo(1);
     }
 
+    /** 스케줄과 근무 유형 템플릿은 서로 다른 리스너(shift, shift.template)가 지운다. 둘 다 돌았는지 본다. */
     @Test
-    void purgingTheStoreRemovesItsPayrollsAndWorkRecords() throws Exception {
+    void purgingTheStoreRemovesItsPayrollsWorkRecordsShiftsAndTemplates() throws Exception {
         perform(payroll(workerMemberId), owner).andExpect(status().isOk());
+        perform(post("/api/v1/stores/" + storeId + "/shift-templates").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"오픈\",\"startTime\":\"09:00\",\"endTime\":\"13:00\"}"), owner)
+                .andExpect(status().isCreated());
+        jdbcClient.sql("""
+                INSERT INTO tw_workforce.shifts (member_id, store_id, work_date, start_time, end_time, status, break_minutes)
+                VALUES (?, ?, ?, '10:00', '14:30', 'SCHEDULED', 30)""")
+                .params(workerMemberId, storeId, workDay).update();
+        assertThat(countOf("shift_templates")).isEqualTo(1);
+        assertThat(countOf("shifts")).isEqualTo(1);
 
         jdbcClient.sql("UPDATE tw_store.stores SET deleted_at = NOW() - INTERVAL 91 DAY WHERE id = ?")
                 .param(storeId).update();
         storePurgeJob.purgeExpiredStores();
 
-        await().atMost(Duration.ofSeconds(5)).until(() -> payrollRows() == 0 && countOf("attendances") == 0);
+        await().atMost(Duration.ofSeconds(5)).until(() -> payrollRows() == 0 && countOf("attendances") == 0
+                && countOf("shifts") == 0 && countOf("shift_templates") == 0);
         assertThat(colleagueMemberId).isPositive();
     }
 

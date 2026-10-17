@@ -1,4 +1,4 @@
-package com.tothework.workforce.shift;
+package com.tothework.workforce.shift.draft;
 
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;

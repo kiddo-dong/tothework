@@ -1,4 +1,4 @@
-package com.tothework.workforce.shift;
+package com.tothework.workforce.shift.draft;
 
 import com.tothework.shared.web.ApiResponse;
 import com.tothework.shared.ratelimit.RateLimit;

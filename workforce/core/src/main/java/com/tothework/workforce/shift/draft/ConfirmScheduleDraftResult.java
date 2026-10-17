@@ -1,4 +1,4 @@
-package com.tothework.workforce.shift;
+package com.tothework.workforce.shift.draft;
 
 import com.tothework.workforce.api.ShiftResponse;
 import java.util.List;

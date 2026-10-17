@@ -1,4 +1,4 @@
-package com.tothework.workforce.shift;
+package com.tothework.workforce.shift.template;
 
 import com.tothework.workforce.config.WorkforceSchema;
 import java.util.List;

@@ -1,4 +1,4 @@
-package com.tothework.workforce.shift;
+package com.tothework.workforce.shift.template;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;

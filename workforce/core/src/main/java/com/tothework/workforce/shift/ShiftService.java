@@ -45,11 +45,15 @@ public class ShiftService {
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public ShiftResponse createShift(Long storeId, Long userId, CreateShiftRequest request) {
         storeAccess.requireOwnerOrManager(storeId, userId);
+
         Worker target = workers.lockAssignable(storeId, request.storeMemberId());
+
         int breakMinutes = validateAndResolveBreak(target, request.workDate(), request.startTime(), request.endTime(),
                 request.breakMinutes(), null, null);
+
         Shift shift = shiftRepository.save(Shift.schedule(target.memberId(), storeId, request.workDate(),
                 request.startTime(), request.endTime(), breakMinutes));
+
         return shift.toResponse(target.user());
     }
 

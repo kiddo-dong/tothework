@@ -30,6 +30,7 @@ public class ShiftController {
     @PostMapping
     public ResponseEntity<ApiResponse<ShiftResponse>> createShift(@PathVariable Long storeId,
             @CurrentUserId Long userId, @Valid @RequestBody CreateShiftRequest request) {
+
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(shiftService.createShift(storeId, userId, request)));
     }

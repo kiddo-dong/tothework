@@ -1,4 +1,4 @@
-package com.tothework.workforce.payroll;
+package com.tothework.workforce.payroll.dashboard;
 
 import com.tothework.store.api.MemberStatus;
 import com.tothework.store.api.StoreAccess;
@@ -13,9 +13,11 @@ import com.tothework.workforce.employment.Workers;
 import com.tothework.workforce.labor.LaborStandards;
 import com.tothework.workforce.leave.LeaveUsage;
 import com.tothework.workforce.leave.LeaveUsageRepository;
-import com.tothework.workforce.payroll.DailyDashboardResponse.DailyMemberRow;
-import com.tothework.workforce.payroll.DashboardResponse.MemberCostRow;
-import com.tothework.workforce.payroll.WeeklyDashboardResponse.WeeklyMemberRow;
+import com.tothework.workforce.payroll.dashboard.DailyDashboardResponse.DailyMemberRow;
+import com.tothework.workforce.payroll.dashboard.DashboardResponse.MemberCostRow;
+import com.tothework.workforce.payroll.dashboard.WeeklyDashboardResponse.WeeklyMemberRow;
+import com.tothework.workforce.payroll.calc.MonthlyPay;
+import com.tothework.workforce.payroll.calc.WorkPeriod;
 import com.tothework.workforce.shift.Shift;
 import com.tothework.workforce.shift.ShiftRepository;
 import java.time.Duration;
@@ -62,7 +64,7 @@ public class StoreDashboardService {
     }
 
     /** 권한 확인 없는 월 인건비 합계. 홈 화면처럼 부르는 쪽이 이미 확인했을 때 쓴다. 근태 요약은 계산하지 않는다. */
-    Payrolls.LaborCost laborCostOf(Long storeId, YearMonth yearMonth) {
+    public Payrolls.LaborCost laborCostOf(Long storeId, YearMonth yearMonth) {
         MonthlyCosts costs = monthlyCosts(storeId, yearMonth);
         return new Payrolls.LaborCost(costs.totalLaborCost(), costs.totalLaborCost() - costs.totalDeduction());
     }

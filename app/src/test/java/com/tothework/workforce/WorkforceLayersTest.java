@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
  * <p>급여는 근태를 읽어 계산하고, 근태 리포트는 스케줄·휴가와 맞춰 보고, 스케줄은 고용 조건(근무 가능 요일·연소자
  * 여부)으로 규칙을 판단한다. 거꾸로 가는 참조가 생기면 나중에 급여만 떼어 내거나 스케줄을 따로 바꾸기 어려워진다.
  * shift와 leave는 서로 모른다. config(스키마 이름·AI 클라이언트)와 api는 어디서나 쓸 수 있다. shift 안에서는
- * template·draft가 본체를 쓰고 그 반대는 없다.
+ * template·draft가 본체를 쓰고 그 반대는 없다. payroll 안에서는 payroll → dashboard → calc 순서다.
  */
 class WorkforceLayersTest {
 
@@ -61,5 +61,23 @@ class WorkforceLayersTest {
                     .should().dependOnClassesThat().resideInAPackage(ROOT + leaf)
                     .check(classes);
         }
+    }
+
+    /**
+     * payroll 안의 순서. 계산(calc)은 순수 계산이라 급여 조회·대시보드를 모르고, 대시보드는 계산만 쓴다. 급여
+     * 조회(payroll)는 둘 다 쓴다 — 다른 서비스에 인건비를 알려 주는 PayrollLookup이 대시보드 집계를 빌려 쓴다.
+     *
+     * <pre>
+     * payroll → dashboard → calc
+     * </pre>
+     */
+    @Test
+    void payrollCalculationSitsBelowDashboard() {
+        noClasses().that().resideInAPackage(ROOT + ".payroll.calc..")
+                .should().dependOnClassesThat().resideInAnyPackage(ROOT + ".payroll", ROOT + ".payroll.dashboard..")
+                .check(classes);
+        noClasses().that().resideInAPackage(ROOT + ".payroll.dashboard..")
+                .should().dependOnClassesThat().resideInAPackage(ROOT + ".payroll")
+                .check(classes);
     }
 }

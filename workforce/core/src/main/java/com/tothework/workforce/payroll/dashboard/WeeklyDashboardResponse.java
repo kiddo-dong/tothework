@@ -1,4 +1,4 @@
-package com.tothework.workforce.payroll;
+package com.tothework.workforce.payroll.dashboard;
 
 import com.tothework.workforce.api.WorkComplianceStatus;
 import java.time.LocalDate;

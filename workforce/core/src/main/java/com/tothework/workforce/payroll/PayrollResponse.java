@@ -2,6 +2,7 @@ package com.tothework.workforce.payroll;
 
 import com.tothework.workforce.api.TaxMode;
 import com.tothework.workforce.employment.Worker;
+import com.tothework.workforce.payroll.calc.MonthlyPay;
 
 public record PayrollResponse(
         Long storeMemberId,

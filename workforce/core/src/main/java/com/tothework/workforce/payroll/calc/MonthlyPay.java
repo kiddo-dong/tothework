@@ -1,10 +1,10 @@
-package com.tothework.workforce.payroll;
+package com.tothework.workforce.payroll.calc;
 
 import com.tothework.shared.error.InvalidRequestException;
 import com.tothework.workforce.api.EmploymentTerms;
 import com.tothework.workforce.api.TaxMode;
 import com.tothework.workforce.labor.LaborStandards;
-import com.tothework.workforce.payroll.PayrollCalculator.PayrollResult;
+import com.tothework.workforce.payroll.calc.PayrollCalculator.PayrollResult;
 import com.tothework.workforce.shift.Shift;
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -17,15 +17,15 @@ import java.util.stream.Collectors;
  *
  * @param works 그 달과 겹치는 ISO 주 전체의 근무. 주 단위 판정(주 40시간 연장·주휴수당)에 앞뒤 달의 날짜가 필요하다
  */
-record MonthlyPay(YearMonth month, List<WorkPeriod> works, PayrollResult result, long leavePay, long totalPay,
+public record MonthlyPay(YearMonth month, List<WorkPeriod> works, PayrollResult result, long leavePay, long totalPay,
         long deduction) {
 
-    long netPay() {
+    public long netPay() {
         return totalPay - deduction;
     }
 
     /** 요청의 연·월. 범위를 벗어나면 400. */
-    static YearMonth monthOf(int year, int month) {
+    public static YearMonth monthOf(int year, int month) {
         if (month < 1 || month > 12) {
             throw new InvalidRequestException("월은 1~12 사이여야 합니다.");
         }
@@ -33,12 +33,12 @@ record MonthlyPay(YearMonth month, List<WorkPeriod> works, PayrollResult result,
     }
 
     /** 근무·스케줄을 읽어 올 범위의 시작: 그 달 1일이 속한 주의 월요일. */
-    static LocalDate fetchFrom(YearMonth month) {
+    public static LocalDate fetchFrom(YearMonth month) {
         return LaborStandards.mondayOfWeek(month.atDay(1));
     }
 
     /** 근무·스케줄을 읽어 올 범위의 끝: 그 달 말일이 속한 주의 일요일. */
-    static LocalDate fetchTo(YearMonth month) {
+    public static LocalDate fetchTo(YearMonth month) {
         return LaborStandards.sundayOfWeek(month.atEndOfMonth());
     }
 
@@ -47,7 +47,7 @@ record MonthlyPay(YearMonth month, List<WorkPeriod> works, PayrollResult result,
      *                  평균 근무시간에 쓴다
      * @param leaveDays 그 달의 연차 사용 일수
      */
-    static MonthlyPay calculate(EmploymentTerms terms, boolean smallBusiness, YearMonth month, List<WorkPeriod> works,
+    public static MonthlyPay calculate(EmploymentTerms terms, boolean smallBusiness, YearMonth month, List<WorkPeriod> works,
             List<Shift> shifts, long leaveDays) {
         Set<LocalDate> scheduledDates = shifts.stream().map(Shift::getWorkDate).collect(Collectors.toSet());
         PayrollResult result = PayrollCalculator.calculate(works, terms.hourlyWage(), smallBusiness,
@@ -62,7 +62,7 @@ record MonthlyPay(YearMonth month, List<WorkPeriod> works, PayrollResult result,
      * 연차수당: 해당 월의 연차 사용일 x 1일 평균 스케줄 근무시간 x 시급. 평균은 그 달의 비취소 스케줄로 계산하고,
      * 스케줄이 없으면 법정 1일 기준(8시간)을 쓴다.
      */
-    static long leavePay(int hourlyWage, List<Shift> shifts, YearMonth month, long leaveDays) {
+    public static long leavePay(int hourlyWage, List<Shift> shifts, YearMonth month, long leaveDays) {
         if (leaveDays == 0) {
             return 0;
         }
@@ -76,7 +76,7 @@ record MonthlyPay(YearMonth month, List<WorkPeriod> works, PayrollResult result,
         return Math.round(leaveDays * dailyHours * hourlyWage);
     }
 
-    static long deduction(TaxMode taxMode, long grossPay) {
+    public static long deduction(TaxMode taxMode, long grossPay) {
         return switch (taxMode) {
             case NONE -> 0;
             case WITHHOLDING_3_3 -> Math.round(grossPay * LaborStandards.WITHHOLDING_TAX_RATE);

@@ -1,7 +1,8 @@
 package com.tothework.workforce.payroll;
 
 import com.tothework.workforce.config.WorkforceSchema;
-import com.tothework.workforce.payroll.PayrollCalculator.PayrollResult;
+import com.tothework.workforce.payroll.calc.MonthlyPay;
+import com.tothework.workforce.payroll.calc.PayrollCalculator.PayrollResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;

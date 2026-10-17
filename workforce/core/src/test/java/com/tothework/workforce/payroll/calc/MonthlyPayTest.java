@@ -1,4 +1,4 @@
-package com.tothework.workforce.payroll;
+package com.tothework.workforce.payroll.calc;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

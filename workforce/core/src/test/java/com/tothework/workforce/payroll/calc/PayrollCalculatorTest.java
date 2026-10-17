@@ -1,8 +1,8 @@
-package com.tothework.workforce.payroll;
+package com.tothework.workforce.payroll.calc;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.tothework.workforce.payroll.PayrollCalculator.PayrollResult;
+import com.tothework.workforce.payroll.calc.PayrollCalculator.PayrollResult;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;

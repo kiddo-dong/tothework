@@ -1,4 +1,4 @@
-package com.tothework.workforce.payroll;
+package com.tothework.workforce.payroll.calc;
 
 import com.tothework.workforce.labor.LaborStandards;
 import java.time.DayOfWeek;
@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
  * <p>제외(추후 확장 대상): 야간수당은 휴게가 야간 시간대에 있었는지 알 수 없어 휴게 차감 없이 출퇴근 시각
  * 겹침으로만 계산한다. 연차수당은 {@link MonthlyPay}가 별도 합산한다.
  */
-final class PayrollCalculator {
+public final class PayrollCalculator {
 
     private static final double OVERTIME_MULTIPLIER = 1.5;
     private static final double NIGHT_PREMIUM_MULTIPLIER = 0.5;
@@ -50,7 +50,7 @@ final class PayrollCalculator {
     private PayrollCalculator() {
     }
 
-    static PayrollResult calculate(List<WorkPeriod> attendances, int hourlyWage, boolean smallBusiness,
+    public static PayrollResult calculate(List<WorkPeriod> attendances, int hourlyWage, boolean smallBusiness,
             DayOfWeek weeklyHolidayDay, Set<LocalDate> scheduledDates, YearMonth targetMonth) {
         Set<LocalDate> attendedDates = attendances.stream()
                 .map(WorkPeriod::workDate)
@@ -165,7 +165,7 @@ final class PayrollCalculator {
     }
 
     /** 금액과 함께 임금명세서의 "계산 방법" 기재에 필요한 시간 집계(대상 월 귀속분)를 담는다. */
-    record PayrollResult(long regularPay, long overtimePay, long nightPay, long holidayWorkPay,
+    public record PayrollResult(long regularPay, long overtimePay, long nightPay, long holidayWorkPay,
             long weeklyHolidayPay, double totalWorkedHours, double overtimeHours, double nightHours,
             double holidayWorkHours) {
     }

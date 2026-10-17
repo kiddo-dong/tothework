@@ -1,4 +1,4 @@
-package com.tothework.workforce.payroll;
+package com.tothework.workforce.payroll.calc;
 
 import com.tothework.workforce.attendance.Attendance;
 import com.tothework.workforce.shift.Shift;
@@ -11,22 +11,22 @@ import java.time.LocalDateTime;
  *
  * @param attendanceId 실제 출퇴근 기록이면 그 id, 가정한 근무면 null
  */
-record WorkPeriod(Long attendanceId, Long memberId, LocalDate workDate, LocalDateTime clockInAt,
+public record WorkPeriod(Long attendanceId, Long memberId, LocalDate workDate, LocalDateTime clockInAt,
         LocalDateTime clockOutAt, int breakMinutes) {
 
-    static WorkPeriod of(Attendance attendance) {
+    public static WorkPeriod of(Attendance attendance) {
         return new WorkPeriod(attendance.getId(), attendance.getMemberId(), attendance.getWorkDate(),
                 attendance.getClockInAt(), attendance.getClockOutAt(), attendance.getBreakMinutes());
     }
 
     /** 아직 오지 않은 스케줄을 그대로 근무한다고 가정한 기록 (저장하지 않음). */
-    static WorkPeriod assumed(Shift shift) {
+    public static WorkPeriod assumed(Shift shift) {
         return new WorkPeriod(null, shift.getMemberId(), shift.getWorkDate(), shift.startDateTime(),
                 shift.endDateTime(), shift.getBreakMinutes());
     }
 
     /** 휴게를 뺀 실근무 분. */
-    long workMinutes() {
+    public long workMinutes() {
         return Math.max(Duration.between(clockInAt, clockOutAt).toMinutes() - breakMinutes, 0);
     }
 }

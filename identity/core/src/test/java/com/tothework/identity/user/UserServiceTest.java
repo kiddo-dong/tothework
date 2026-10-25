@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 import com.tothework.identity.api.UserWithdrawnEvent;
 import com.tothework.identity.api.WithdrawalGuard;
 import com.tothework.identity.auth.EmailTokenRepository;
+import com.tothework.identity.auth.RefreshTokenRepository;
 import com.tothework.shared.error.ConflictException;
 import com.tothework.shared.storage.S3Uploader;
 import java.time.LocalDate;
@@ -42,6 +43,7 @@ class UserServiceTest {
 
     @Mock private UserRepository userRepository;
     @Mock private EmailTokenRepository emailTokenRepository;
+    @Mock private RefreshTokenRepository refreshTokenRepository;
     @Mock private WithdrawalGuard withdrawalGuard;
     @Mock private ApplicationEventPublisher eventPublisher;
     @Mock private S3Uploader s3Uploader;
@@ -52,7 +54,7 @@ class UserServiceTest {
 
     @BeforeEach
     void setUp() {
-        userService = new UserService(userRepository, emailTokenRepository, List.of(withdrawalGuard),
+        userService = new UserService(userRepository, emailTokenRepository, refreshTokenRepository, List.of(withdrawalGuard),
                 eventPublisher, s3Uploader, transactionManager);
         user = User.signUpLocally("me@albam.dev", "encoded", "테스트", "010-1111-2222", LocalDate.of(1990, 1, 1),
                 LocalDateTime.now());
@@ -72,6 +74,7 @@ class UserServiceTest {
         verify(userRepository).save(user);
         verify(eventPublisher).publishEvent(new UserWithdrawnEvent(USER_ID));
         verify(emailTokenRepository).deleteAllOfUser(USER_ID);
+        verify(refreshTokenRepository).deleteAllOfUser(USER_ID); // 남은 세션으로 재발급받지 못하게
         verify(s3Uploader).delete("profile-images/old.png");
     }
 
@@ -84,6 +87,7 @@ class UserServiceTest {
 
         verify(eventPublisher, never()).publishEvent(any(Object.class));
         verify(userRepository, never()).save(any());
+        verify(refreshTokenRepository, never()).deleteAllOfUser(any());
         assertThat(user.getDeletedAt()).isNull();
     }
 

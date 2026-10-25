@@ -231,7 +231,7 @@
 - **주휴수당**: 주 15시간 이상 **완전 개근** 시 지급. `min(주근무시간,40)/40 × 8 × 시급`, 해당 주의 **일요일이 속한 달**에 귀속(월 경계 이슈 방지). 스케줄이 아예 없는 주는 개근으로 간주.
 - **5인 미만 사업장 예외**: 연장 1.0배(가산 없음), 야간수당 0, 휴일가산 0 — **단 주휴수당은 그대로 적용**(면제 대상 아님).
 - **연차수당**: 해당월 연차일수 × 평균 소정근로시간 × 시급 (스케줄 없으면 8시간 기본값).
-- **공제**: taxMode별 — 원천징수 3.3%(`WITHHOLDING_TAX_RATE`) 또는 4대보험 근로자부담 근사 9.404%(`FOUR_INSURANCES_EMPLOYEE_RATE`).
+- **공제**: taxMode별 — 원천징수 3.3%(`WITHHOLDING_TAX_RATE`) 또는 4대보험 근로자부담 근사 9.717%(2026년)(`FOUR_INSURANCES_EMPLOYEE_RATE`).
 - **estimateMyPayroll**: 이번 달 남은 미래 스케줄을 "그대로 근무할 것"으로 가정한 가상 Attendance를 만들어 실제 완료 근태와 합쳐 계산 — 미래 주휴수당 자격도 낙관적으로 가정(코드에 한계로 명시).
 
 ### 3.9 menu — 메뉴 원가 계산기
@@ -319,7 +319,7 @@
 | HOLIDAY_PREMIUM_MULTIPLIER | +0.5× | 휴일근로 8h 이내 가산 |
 | HOLIDAY_OVERTIME_PREMIUM_MULTIPLIER | +1.0× | 휴일근로 8h 초과 가산 |
 | WITHHOLDING_TAX_RATE | 3.3% | 사업소득 원천징수(소득세3%+지방소득세0.3%) |
-| FOUR_INSURANCES_EMPLOYEE_RATE | 9.404% | 4대보험 근로자부담 근사 합계 |
+| FOUR_INSURANCES_EMPLOYEE_RATE | 9.717% | 4대보험 근로자부담 근사 합계 (2026년) |
 
 ---
 

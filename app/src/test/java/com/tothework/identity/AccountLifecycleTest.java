@@ -104,11 +104,26 @@ class AccountLifecycleTest {
         mockMvc.perform(post("/api/v1/auth/refresh").cookie(refreshCookie))
                 .andExpect(status().isBadRequest());
 
+        // 쓴 쿠키가 다시 오면 유출로 보고 세션을 전부 끊는다. 그 폐기가 거부 응답과 함께 롤백되면 안 된다
+        Cookie rotatedCookie = refreshed.getResponse().getCookie("refreshToken");
+        mockMvc.perform(post("/api/v1/auth/refresh").cookie(rotatedCookie))
+                .andExpect(status().isBadRequest());
+
+        // 다시 로그인한 세션을 들고 탈퇴한다
+        MvcResult relogin = mockMvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"%s\",\"password\":\"Test1234!\"}".formatted(email)))
+                .andExpect(status().isOk())
+                .andReturn();
+        Cookie sessionAtWithdrawal = relogin.getResponse().getCookie("refreshToken");
+
         // 탈퇴하면 만료 전인 액세스 토큰도 바로 막히고, laborqa가 이벤트를 받아 이력을 지운다
         mockMvc.perform(delete("/api/v1/users/me").header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isOk());
         mockMvc.perform(get("/api/v1/users/me").header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isUnauthorized());
+        // 리프레시 토큰도 함께 끊겨 재발급으로 로그인 상태를 되살릴 수 없다
+        mockMvc.perform(post("/api/v1/auth/refresh").cookie(sessionAtWithdrawal))
+                .andExpect(status().isBadRequest());
         await().atMost(Duration.ofSeconds(5)).until(() -> laborQaSessionsOf(userId) == 0);
     }
 

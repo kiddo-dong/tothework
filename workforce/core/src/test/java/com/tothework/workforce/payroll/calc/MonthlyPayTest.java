@@ -40,19 +40,74 @@ class MonthlyPayTest {
     void deductionFollowsTheTaxMode() {
         assertThat(MonthlyPay.deduction(TaxMode.NONE, 1_000_000)).isZero();
         assertThat(MonthlyPay.deduction(TaxMode.WITHHOLDING_3_3, 1_000_000)).isEqualTo(33_000);
-        assertThat(MonthlyPay.deduction(TaxMode.FOUR_INSURANCES, 1_000_000)).isEqualTo(94_040);
+        assertThat(MonthlyPay.deduction(TaxMode.FOUR_INSURANCES, 1_000_000)).isEqualTo(97_170);
     }
 
     @Test
     void totalAddsLeavePayAndNetSubtractsTheDeduction() {
         EmploymentTerms terms = new EmploymentTerms(1L, 1L, WAGE, TaxMode.WITHHOLDING_3_3, Set.of(), null);
 
-        MonthlyPay pay = MonthlyPay.calculate(terms, false, JANUARY_2026, List.of(), List.of(), 1);
+        MonthlyPay pay = MonthlyPay.calculate(terms, false, JANUARY_2026, List.of(), List.of(),
+                Set.of(LocalDate.of(2026, 1, 7)));
 
         assertThat(pay.leavePay()).isEqualTo(80_000);
         assertThat(pay.totalPay()).isEqualTo(80_000);
         assertThat(pay.deduction()).isEqualTo(2_640);
         assertThat(pay.netPay()).isEqualTo(77_360);
+    }
+
+    /** 연차수당은 그 달 날짜만 센다. 앞뒤 주의 연차는 개근 판정에만 쓰인다. */
+    @Test
+    void leaveOutsideTheMonthIsNotPaidThisMonth() {
+        EmploymentTerms terms = new EmploymentTerms(1L, 1L, WAGE, TaxMode.NONE, Set.of(), null);
+
+        MonthlyPay pay = MonthlyPay.calculate(terms, false, JANUARY_2026, List.of(), List.of(),
+                Set.of(LocalDate.of(2025, 12, 30), LocalDate.of(2026, 2, 1)));
+
+        assertThat(pay.leavePay()).isZero();
+    }
+
+    /**
+     * 연차를 쓴 날은 결근이 아니다. 1월 2주차(5~9일) 스케줄 5일 중 하루를 연차로 쉬고 나머지 4일을 4시간씩(16시간)
+     * 일했다. 스케줄을 취소하지 않았어도 주휴수당이 나와야 한다 (16/40 × 8시간 × 시급).
+     */
+    @Test
+    void aLeaveDayDoesNotBreakPerfectAttendanceForTheWeeklyHolidayPay() {
+        EmploymentTerms terms = new EmploymentTerms(1L, 1L, WAGE, TaxMode.NONE, Set.of(), null);
+        List<Shift> shifts = new java.util.ArrayList<>();
+        List<WorkPeriod> works = new java.util.ArrayList<>();
+        for (int day = 5; day <= 9; day++) {
+            LocalDate date = LocalDate.of(2026, 1, day);
+            shifts.add(shift(date, 10, 14));
+            if (day != 7) {
+                works.add(new WorkPeriod((long) day, 1L, date, date.atTime(10, 0), date.atTime(14, 0), 0));
+            }
+        }
+
+        MonthlyPay pay = MonthlyPay.calculate(terms, false, JANUARY_2026, works, shifts,
+                Set.of(LocalDate.of(2026, 1, 7)));
+
+        assertThat(pay.result().weeklyHolidayPay()).isEqualTo(Math.round(16 / 40.0 * 8 * WAGE));
+        assertThat(pay.leavePay()).isEqualTo(4 * WAGE);
+    }
+
+    /** 연차가 아닌데 출근하지 않은 날은 여전히 결근이라 주휴수당이 없다. */
+    @Test
+    void anUnexcusedAbsenceStillBreaksPerfectAttendance() {
+        EmploymentTerms terms = new EmploymentTerms(1L, 1L, WAGE, TaxMode.NONE, Set.of(), null);
+        List<Shift> shifts = new java.util.ArrayList<>();
+        List<WorkPeriod> works = new java.util.ArrayList<>();
+        for (int day = 5; day <= 9; day++) {
+            LocalDate date = LocalDate.of(2026, 1, day);
+            shifts.add(shift(date, 10, 14));
+            if (day != 7) {
+                works.add(new WorkPeriod((long) day, 1L, date, date.atTime(10, 0), date.atTime(14, 0), 0));
+            }
+        }
+
+        MonthlyPay pay = MonthlyPay.calculate(terms, false, JANUARY_2026, works, shifts, Set.of());
+
+        assertThat(pay.result().weeklyHolidayPay()).isZero();
     }
 
     @Test

@@ -29,6 +29,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -85,9 +86,11 @@ public class StoreDashboardService {
                 .collect(Collectors.groupingBy(WorkPeriod::memberId));
         Map<Long, List<Shift>> shiftsByMember = activeShiftsOf(storeId, fetchFrom, fetchTo).stream()
                 .collect(Collectors.groupingBy(Shift::getMemberId));
-        Map<Long, Long> leaveDaysByMember = leaveUsageRepository
-                .findAllByStoreIdAndLeaveDateBetween(storeId, yearMonth.atDay(1), yearMonth.atEndOfMonth()).stream()
-                .collect(Collectors.groupingBy(LeaveUsage::getMemberId, Collectors.counting()));
+        // 개근 판정이 주 전체를 보므로 연차도 달 앞뒤 주까지 읽는다
+        Map<Long, Set<LocalDate>> leaveDatesByMember = leaveUsageRepository
+                .findAllByStoreIdAndLeaveDateBetween(storeId, fetchFrom, fetchTo).stream()
+                .collect(Collectors.groupingBy(LeaveUsage::getMemberId,
+                        Collectors.mapping(LeaveUsage::getLeaveDate, Collectors.toSet())));
 
         long totalWorkMinutes = 0;
         long totalLaborCost = 0;
@@ -102,7 +105,7 @@ public class StoreDashboardService {
             MonthlyPay pay = MonthlyPay.calculate(worker.terms(), worker.policy().smallBusiness(), yearMonth,
                     worksByMember.getOrDefault(worker.memberId(), List.of()),
                     shiftsByMember.getOrDefault(worker.memberId(), List.of()),
-                    leaveDaysByMember.getOrDefault(worker.memberId(), 0L));
+                    leaveDatesByMember.getOrDefault(worker.memberId(), Set.of()));
             // 이번 달 비용이 없는 퇴사자는 목록에서 제외한다
             if (pay.totalPay() == 0 && !active) {
                 continue;

@@ -63,14 +63,21 @@ public class SupplierItem {
         this.spec = request.spec();
         this.memo = request.memo();
         this.displayOrder = request.displayOrderOrDefault();
+        // 수량이 비어 있는 요일은 "그날 발주 없음"이라 키를 두지 않는다. null을 그대로 두면 응답을 만들다 실패했다.
         this.quantities = request.weeklyQuantities() == null ? new HashMap<>()
-                : request.weeklyQuantities().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey,
-                        entry -> new DailyQuantity(entry.getValue()), (a, b) -> a, HashMap::new));
+                : request.weeklyQuantities().entrySet().stream()
+                        .filter(entry -> entry.getValue() != null && !entry.getValue().isBlank())
+                        .collect(Collectors.toMap(Map.Entry::getKey,
+                                entry -> new DailyQuantity(entry.getValue()), (a, b) -> a, HashMap::new));
     }
 
     Map<DayOfWeek, String> weeklyQuantities() {
         Map<DayOfWeek, String> weekly = new EnumMap<>(DayOfWeek.class);
-        quantities.forEach((day, quantity) -> weekly.put(day, quantity.quantity()));
+        quantities.forEach((day, quantity) -> {
+            if (quantity.quantity() != null) {
+                weekly.put(day, quantity.quantity());
+            }
+        });
         return weekly;
     }
 }

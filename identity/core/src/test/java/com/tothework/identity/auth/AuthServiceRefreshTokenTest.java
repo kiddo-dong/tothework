@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -31,7 +32,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.mockito.InOrder;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.SimpleTransactionStatus;
 
 /**
  * 리프레시 토큰의 폐기·회전·재사용 탐지. 토큰이 서명만으로 검증되던 시절에는 로그아웃해도 유출된 토큰을 만료일까지
@@ -66,6 +69,7 @@ class AuthServiceRefreshTokenTest {
         // 기본은 삭제 경합에서 이긴 경우. 진 경우는 해당 테스트에서 따로 0을 준다.
         lenient().when(refreshTokenRepository.deleteClaimed(any())).thenReturn(1);
         lenient().when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        lenient().when(transactionManager.getTransaction(any())).thenReturn(new SimpleTransactionStatus());
     }
 
     private RefreshToken storedRecord() {
@@ -117,6 +121,35 @@ class AuthServiceRefreshTokenTest {
         assertThatThrownBy(() -> authService.refresh(PRESENTED_TOKEN)).isInstanceOf(InvalidRequestException.class);
 
         verify(refreshTokenRepository).deleteAllOfUser(user.getId());
+    }
+
+    /**
+     * 세션 폐기는 거부 응답과 함께 롤백되면 안 된다. 예전에는 폐기와 거부 예외가 한 트랜잭션이라 DELETE가 되돌아가,
+     * 유출된 토큰으로 회전받은 새 토큰이 계속 살아 있었다.
+     */
+    @Test
+    void sessionRevocationAfterReuseIsCommittedBeforeTheRefusal() {
+        givenTokenIsAValidRefreshToken();
+        when(refreshTokenRepository.findByTokenHash(anyString())).thenReturn(Optional.empty());
+        when(jwtTokens.userIdOf(PRESENTED_TOKEN)).thenReturn(user.getId());
+
+        assertThatThrownBy(() -> authService.refresh(PRESENTED_TOKEN)).isInstanceOf(InvalidRequestException.class);
+
+        InOrder order = inOrder(refreshTokenRepository, transactionManager);
+        order.verify(refreshTokenRepository).deleteAllOfUser(user.getId());
+        order.verify(transactionManager).commit(any());
+        verify(transactionManager, never()).rollback(any());
+    }
+
+    /** 탈퇴한 계정의 토큰이 남아 있어도 새 토큰을 주지 않는다. 주면 익명화된 이메일로 인증이 통과한다. */
+    @Test
+    void refreshIsRefusedForAWithdrawnUser() {
+        givenTokenIsAValidRefreshToken();
+        when(refreshTokenRepository.findByTokenHash(anyString())).thenReturn(Optional.of(storedRecord()));
+        user.anonymizeForWithdrawal();
+
+        assertThatThrownBy(() -> authService.refresh(PRESENTED_TOKEN)).isInstanceOf(InvalidRequestException.class);
+        verify(jwtTokens, never()).issue(any(), anyString(), any());
     }
 
     /** 정상 재발급까지 세션을 끊어버리면 안 된다. */

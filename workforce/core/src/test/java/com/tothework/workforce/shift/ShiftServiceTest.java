@@ -17,6 +17,7 @@ import static org.mockito.Mockito.when;
 import com.tothework.shared.error.InvalidRequestException;
 import com.tothework.store.api.StoreAccess;
 import com.tothework.workforce.api.ShiftResponse;
+import com.tothework.workforce.api.ShiftStatus;
 import com.tothework.workforce.employment.Worker;
 import com.tothework.workforce.employment.Workers;
 import java.time.DayOfWeek;
@@ -25,6 +26,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -157,6 +159,61 @@ class ShiftServiceTest {
         assertThatThrownBy(() -> shiftService.createShift(STORE_ID, USER_ID, request(MONDAY, 7, 12, 30)))
                 .isInstanceOf(InvalidRequestException.class)
                 .hasMessageContaining("영업시간");
+    }
+
+    /** 자정을 넘겨 영업하는 매장(18:00~02:00)에서도 저녁 근무는 영업시간 안이다. 마감 02:00과 그대로 비교하면 거부됐다. */
+    @Test
+    void acceptsAnEveningShiftInAStoreOpenPastMidnight() {
+        given(aWorker().storeHours(Map.of(DayOfWeek.MONDAY, open(18, 2))).build());
+
+        assertThat(shiftService.createShift(STORE_ID, USER_ID, request(MONDAY, 19, 23, 30))).isNotNull();
+        assertThat(shiftService.createShift(STORE_ID, USER_ID, request(MONDAY, 0, 2, 0))).isNotNull();
+    }
+
+    @Test
+    void stillRejectsHoursOutsideAStoreOpenPastMidnight() {
+        given(aWorker().storeHours(Map.of(DayOfWeek.MONDAY, open(18, 2))).build());
+
+        assertThatThrownBy(() -> shiftService.createShift(STORE_ID, USER_ID, request(MONDAY, 15, 20, 30)))
+                .isInstanceOf(InvalidRequestException.class)
+                .hasMessageContaining("영업시간");
+        assertThatThrownBy(() -> shiftService.createShift(STORE_ID, USER_ID, request(MONDAY, 1, 4, 0)))
+                .isInstanceOf(InvalidRequestException.class)
+                .hasMessageContaining("영업시간");
+    }
+
+    /**
+     * 스케줄을 잡은 뒤 그 요일을 휴무로 바꾸거나 근무 가능 요일에서 빼도, 이미 잡힌 스케줄은 취소할 수 있어야 한다.
+     * 취소할 때 규칙을 다시 검사해 막혔었다.
+     */
+    @Test
+    void aShiftCanBeCanceledAfterTheRulesChanged() {
+        Shift shift = existing(55L, MONDAY, LocalTime.of(9, 0), LocalTime.of(13, 0), 0);
+        when(shiftRepository.findByIdAndStoreId(55L, STORE_ID)).thenReturn(Optional.of(shift));
+        when(workers.lockAny(STORE_ID, MEMBER_ID)).thenReturn(aWorker()
+                .storeHours(Map.of(DayOfWeek.MONDAY, closed()))
+                .availableOn(DayOfWeek.TUESDAY)
+                .build());
+
+        ShiftResponse canceled = shiftService.updateShift(STORE_ID, 55L, USER_ID, new UpdateShiftRequest(MONDAY,
+                LocalTime.of(9, 0), LocalTime.of(13, 0), null, ShiftStatus.CANCELED));
+
+        assertThat(canceled.status()).isEqualTo(ShiftStatus.CANCELED);
+        assertThat(canceled.breakMinutes()).isZero(); // 안 보낸 휴게는 그대로 둔다
+    }
+
+    /** 취소가 아닌 수정은 지금 규칙을 그대로 검사한다. */
+    @Test
+    void updatingAShiftOnAClosedDayIsStillRejected() {
+        Shift shift = existing(55L, MONDAY, LocalTime.of(9, 0), LocalTime.of(13, 0), 0);
+        when(shiftRepository.findByIdAndStoreId(55L, STORE_ID)).thenReturn(Optional.of(shift));
+        when(workers.lockAny(STORE_ID, MEMBER_ID)).thenReturn(aWorker()
+                .storeHours(Map.of(DayOfWeek.MONDAY, closed())).build());
+
+        assertThatThrownBy(() -> shiftService.updateShift(STORE_ID, 55L, USER_ID, new UpdateShiftRequest(MONDAY,
+                LocalTime.of(10, 0), LocalTime.of(13, 0), null, ShiftStatus.SCHEDULED)))
+                .isInstanceOf(InvalidRequestException.class)
+                .hasMessageContaining("휴무");
     }
 
     /** 5인 미만 사업장의 성인은 주간 상한 검사 자체를 건너뛴다(그 주의 스케줄을 조회하지도 않는다). */

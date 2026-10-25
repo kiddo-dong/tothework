@@ -7,6 +7,7 @@ import com.tothework.workforce.attendance.AttendanceRepository;
 import com.tothework.workforce.attendance.AttendanceStatus;
 import com.tothework.workforce.employment.Worker;
 import com.tothework.workforce.employment.Workers;
+import com.tothework.workforce.leave.LeaveUsage;
 import com.tothework.workforce.leave.LeaveUsageRepository;
 import com.tothework.workforce.payroll.calc.MonthlyPay;
 import com.tothework.workforce.payroll.calc.PayrollCalculator.PayrollResult;
@@ -18,6 +19,8 @@ import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -94,8 +97,9 @@ public class PayrollService {
     }
 
     /**
-     * 그 달과 겹치는 ISO 주 전체의 끝난 근태·비취소 스케줄과 그 달의 연차 일수를 읽어 계산한다.
-     * includeFutureScheduleAsWorked가 true면(예상 급여) 아직 오지 않은 스케줄을 출근한 것으로 간주한다.
+     * 그 달과 겹치는 ISO 주 전체의 끝난 근태·비취소 스케줄·연차를 읽어 계산한다.
+     * includeFutureScheduleAsWorked가 true면(예상 급여) 아직 오지 않은 스케줄을 출근한 것으로 간주한다. 단 연차를 쓴
+     * 날의 스케줄은 빼는데, 그날은 연차수당이 따로 붙어 근무로도 세면 두 번 지급하는 셈이 된다.
      */
     private MonthlyPay monthlyPayOf(Worker worker, YearMonth month, boolean includeFutureScheduleAsWorked) {
         LocalDate from = MonthlyPay.fetchFrom(month);
@@ -106,13 +110,17 @@ public class PayrollService {
         List<Shift> shifts = shiftRepository
                 .findAllByMemberIdAndWorkDateBetweenOrderByWorkDateAscStartTimeAsc(worker.memberId(), from, to)
                 .stream().filter(shift -> !shift.isCanceled()).toList();
+        Set<LocalDate> leaveDates = leaveUsageRepository
+                .findAllByMemberIdAndLeaveDateBetween(worker.memberId(), from, to).stream()
+                .map(LeaveUsage::getLeaveDate)
+                .collect(Collectors.toSet());
         if (includeFutureScheduleAsWorked) {
             LocalDate today = LocalDate.now();
-            shifts.stream().filter(shift -> shift.getWorkDate().isAfter(today))
+            shifts.stream()
+                    .filter(shift -> shift.getWorkDate().isAfter(today))
+                    .filter(shift -> !leaveDates.contains(shift.getWorkDate()))
                     .map(WorkPeriod::assumed).forEach(works::add);
         }
-        long leaveDays = leaveUsageRepository.countByMemberIdAndLeaveDateBetween(worker.memberId(), month.atDay(1),
-                month.atEndOfMonth());
-        return MonthlyPay.calculate(worker.terms(), worker.policy().smallBusiness(), month, works, shifts, leaveDays);
+        return MonthlyPay.calculate(worker.terms(), worker.policy().smallBusiness(), month, works, shifts, leaveDates);
     }
 }

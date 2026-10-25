@@ -3,6 +3,7 @@ package com.tothework.identity.user;
 import com.tothework.identity.api.UserWithdrawnEvent;
 import com.tothework.identity.api.WithdrawalGuard;
 import com.tothework.identity.auth.EmailTokenRepository;
+import com.tothework.identity.auth.RefreshTokenRepository;
 import com.tothework.shared.error.ConflictException;
 import com.tothework.shared.error.NotFoundException;
 import com.tothework.shared.storage.S3Uploader;
@@ -27,6 +28,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final EmailTokenRepository emailTokenRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
     private final List<WithdrawalGuard> withdrawalGuards;
     private final ApplicationEventPublisher eventPublisher;
     private final S3Uploader s3Uploader;
@@ -69,7 +71,7 @@ public class UserService {
      * 탈퇴. 다른 서비스의 기록이 이 id를 참조하므로 행을 지우지 않고 개인정보를 익명화한다.
      *
      * <p>막을 조건은 {@link WithdrawalGuard}에 먼저 묻는다 (예: 활동 중인 매장). 다른 서비스가 가진 개인 데이터는
-     * {@link UserWithdrawnEvent}를 받은 각 서비스가 커밋 이후 스스로 지운다. S3 삭제는 커밋 뒤 트랜잭션 밖에서 한다.
+     * {@link UserWithdrawnEvent}를 받은 각 서비스가 커밋 이후 스스로 지운다. 로그인 세션(리프레시 토큰)은 함께 끊는다. S3 삭제는 커밋 뒤 트랜잭션 밖에서 한다.
      */
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void withdraw(Long userId) {
@@ -78,6 +80,8 @@ public class UserService {
             User user = getUser(userId);
             String key = user.getProfileImageKey();
             emailTokenRepository.deleteAllOfUser(userId);
+            // 리프레시 토큰이 남으면 탈퇴 뒤에도 재발급으로 로그인 상태가 이어진다.
+            refreshTokenRepository.deleteAllOfUser(userId);
             user.anonymizeForWithdrawal();
             userRepository.save(user);
             eventPublisher.publishEvent(new UserWithdrawnEvent(userId));

@@ -33,10 +33,11 @@ public final class LaborStandards {
     public static final double WITHHOLDING_TAX_RATE = 0.033;
 
     /**
-     * 4대보험 근로자 부담 요율 합계의 근사치
-     * (국민연금 4.5% + 건강보험 3.545% + 장기요양 0.459% + 고용보험 0.9%). 매년 고시에 따라 갱신 필요.
+     * 2026년 4대보험 근로자 부담 요율 합계의 근사치. 매년 고시에 따라 갱신 필요.
+     * 국민연금 4.75%(9.5%의 절반) + 건강보험 3.595%(7.19%의 절반) + 장기요양 0.472%(건강보험료의 13.14%의 절반)
+     * + 고용보험 0.9%. 국민연금 기준소득월액 상·하한은 반영하지 않는다.
      */
-    public static final double FOUR_INSURANCES_EMPLOYEE_RATE = 0.09404;
+    public static final double FOUR_INSURANCES_EMPLOYEE_RATE = 0.09717;
 
     private LaborStandards() {
     }

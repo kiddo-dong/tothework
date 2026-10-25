@@ -14,8 +14,6 @@ public interface LeaveUsageRepository extends ListCrudRepository<LeaveUsage, Lon
 
     long countByMemberId(Long memberId);
 
-    long countByMemberIdAndLeaveDateBetween(Long memberId, LocalDate from, LocalDate to);
-
     boolean existsByMemberIdAndLeaveDate(Long memberId, LocalDate leaveDate);
 
     Optional<LeaveUsage> findByIdAndStoreId(Long id, Long storeId);

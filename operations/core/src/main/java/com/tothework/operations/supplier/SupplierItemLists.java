@@ -32,8 +32,9 @@ class SupplierItemLists {
             return Map.of();
         }
         Map<Long, Map<DayOfWeek, String>> quantities = new HashMap<>();
+        // 수량 열은 NULL을 허용한다. 그런 행이 있어도 Map.copyOf가 실패하지 않도록 발주 없는 요일로 본다.
         jdbcClient.sql("SELECT q.item_id, q.day_of_week, q.quantity FROM " + QUANTITIES + " q JOIN " + ITEMS
-                        + " i ON i.id = q.item_id WHERE i.supplier_id IN (:ids)")
+                        + " i ON i.id = q.item_id WHERE i.supplier_id IN (:ids) AND q.quantity IS NOT NULL")
                 .param("ids", supplierIds)
                 .query((rs, rowNum) -> quantities.computeIfAbsent(rs.getLong("item_id"),
                                 id -> new EnumMap<>(DayOfWeek.class))

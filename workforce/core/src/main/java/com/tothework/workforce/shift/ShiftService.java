@@ -143,9 +143,9 @@ public class ShiftService {
         Worker member = workers.lockAny(storeId, shift.getMemberId());
         int breakMinutes;
         if (request.status() == ShiftStatus.CANCELED) {
-            breakMinutes = resolveBreakMinutes(member.policy(), request.startTime(), request.endTime(),
-                    request.breakMinutes());
-            validateAvailability(member, request.workDate(), request.startTime(), request.endTime());
+            // 취소된 스케줄은 근무 예정이 아니라 어떤 규칙에도 세지 않는다. 그런데 규칙을 다시 검사하면, 스케줄을 잡은
+            // 뒤에 매장 휴무일·근무 가능 요일·휴게 정책을 바꾼 경우 이미 잡힌 스케줄을 취소할 수 없게 된다.
+            breakMinutes = request.breakMinutes() != null ? request.breakMinutes() : shift.getBreakMinutes();
         } else {
             breakMinutes = validateAndResolveBreak(member, request.workDate(), request.startTime(), request.endTime(),
                     request.breakMinutes(), shiftId, null);
@@ -279,8 +279,31 @@ public class ShiftService {
         }
         LocalTime openTime = hours.openTime();
         LocalTime closeTime = hours.closeTime();
-        if ((openTime != null && startTime.isBefore(openTime)) || (closeTime != null && endTime.isAfter(closeTime))) {
+        boolean outside = openTime != null && closeTime != null
+                ? !withinBusinessHours(openTime, closeTime, startTime, endTime)
+                : (openTime != null && startTime.isBefore(openTime)) || (closeTime != null && endTime.isAfter(closeTime));
+        if (outside) {
             throw new InvalidRequestException("매장 영업시간(" + openTime + "~" + closeTime + ")을 벗어난 스케줄입니다.");
         }
+    }
+
+    /**
+     * 자정을 넘지 않는 스케줄이 영업시간 안에 있는지. 시각을 "오픈 후 몇 분"으로 바꿔 비교한다. 그래야 18:00~02:00처럼
+     * 자정을 넘겨 영업하는 매장에서도 19:00~23:00이 영업시간 안으로 판정된다(종료 시각 02:00과 그대로 비교하면 23:00이
+     * 더 늦어 밖으로 나왔다). 오픈과 마감이 같으면 24시간 영업으로 본다.
+     */
+    private static boolean withinBusinessHours(LocalTime openTime, LocalTime closeTime, LocalTime startTime,
+            LocalTime endTime) {
+        long businessMinutes = minutesSinceOpen(openTime, closeTime);
+        if (businessMinutes == 0) {
+            return true;
+        }
+        long start = minutesSinceOpen(openTime, startTime);
+        long end = minutesSinceOpen(openTime, endTime);
+        return start < end && end <= businessMinutes;
+    }
+
+    private static long minutesSinceOpen(LocalTime openTime, LocalTime time) {
+        return Math.floorMod(Duration.between(openTime, time).toMinutes(), 24 * 60);
     }
 }

@@ -43,15 +43,22 @@ public record MonthlyPay(YearMonth month, List<WorkPeriod> works, PayrollResult 
     }
 
     /**
-     * @param shifts    취소되지 않은 스케줄 ({@link #fetchFrom}~{@link #fetchTo}). 주휴수당 개근 판정과 연차수당의 1일
-     *                  평균 근무시간에 쓴다
-     * @param leaveDays 그 달의 연차 사용 일수
+     * @param shifts     취소되지 않은 스케줄 ({@link #fetchFrom}~{@link #fetchTo}). 주휴수당 개근 판정과 연차수당의 1일
+     *                   평균 근무시간에 쓴다
+     * @param leaveDates 연차를 쓴 날짜 ({@link #fetchFrom}~{@link #fetchTo}). 연차수당은 그 달 날짜만 세고, 개근 판정에서는
+     *                   주 전체를 본다
      */
     public static MonthlyPay calculate(EmploymentTerms terms, boolean smallBusiness, YearMonth month, List<WorkPeriod> works,
-            List<Shift> shifts, long leaveDays) {
-        Set<LocalDate> scheduledDates = shifts.stream().map(Shift::getWorkDate).collect(Collectors.toSet());
+            List<Shift> shifts, Set<LocalDate> leaveDates) {
+        // 연차를 쓴 날은 결근이 아니다. 스케줄을 취소하지 않은 채 연차를 등록해도 그 주의 주휴수당이 사라지지 않도록
+        // 개근 판정에서 뺀다.
+        Set<LocalDate> scheduledDates = shifts.stream()
+                .map(Shift::getWorkDate)
+                .filter(date -> !leaveDates.contains(date))
+                .collect(Collectors.toSet());
         PayrollResult result = PayrollCalculator.calculate(works, terms.hourlyWage(), smallBusiness,
                 terms.weeklyHolidayDay(), scheduledDates, month);
+        long leaveDays = leaveDates.stream().filter(date -> YearMonth.from(date).equals(month)).count();
         long leavePay = leavePay(terms.hourlyWage(), shifts, month, leaveDays);
         long totalPay = result.regularPay() + result.overtimePay() + result.nightPay() + result.holidayWorkPay()
                 + result.weeklyHolidayPay() + leavePay;

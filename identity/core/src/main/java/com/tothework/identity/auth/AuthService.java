@@ -284,27 +284,38 @@ public class AuthService {
     /**
      * 리프레시 토큰을 새 토큰 쌍으로 교환한다. 서명·만료뿐 아니라 저장된 기록이 있는지도 확인하므로, 로그아웃이나
      * 비밀번호 변경으로 지워진 토큰은 아직 만료 전이어도 거부된다. 쓴 토큰은 지우고 새로 발급한다(회전).
+     *
+     * <p>거부할 때도 지운 것(재사용 탐지의 세션 폐기, 소비한 토큰)은 남아야 한다. 같은 트랜잭션에서 예외를 던지면
+     * 그 삭제가 함께 롤백돼 폐기가 일어나지 않았으므로, 트랜잭션은 거부 여부만 돌려주고 커밋된 뒤에 예외를 던진다.
      */
-    @Transactional
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public IssuedTokens refresh(String refreshToken) {
         if (!jwtTokens.isValid(refreshToken, JwtTokens.Type.REFRESH)) {
             throw new InvalidRequestException("유효하지 않은 리프레시 토큰입니다.");
         }
-        Optional<RefreshToken> stored = refreshTokenRepository.findByTokenHash(hashToken(refreshToken));
-        if (stored.isEmpty()) {
-            revokeAllSessionsAfterReuse(refreshToken);
+        IssuedTokens issued = new TransactionTemplate(transactionManager).execute(status -> {
+            Optional<RefreshToken> stored = refreshTokenRepository.findByTokenHash(hashToken(refreshToken));
+            if (stored.isEmpty()) {
+                revokeAllSessionsAfterReuse(refreshToken);
+                return null;
+            }
+
+            // 같은 토큰을 든 두 요청은 둘 다 위 조회에서 행을 찾는다. 삭제는 한쪽만 성공하므로 지운 행 수로 누가
+            // 이겼는지 가린다. 진 쪽은 거의 항상 같은 사람의 다른 탭이라 탈취로 보지 않고 세션을 끊지 않는다.
+            if (refreshTokenRepository.deleteClaimed(stored.get().getId()) == 0) {
+                throw new BusinessException(ErrorCode.TOKEN_ALREADY_ROTATED,
+                        "다른 창에서 로그인이 먼저 갱신됐어요. 다시 시도해 주세요.");
+            }
+            // 탈퇴한 계정은 이메일이 익명화돼 있어, 여기서 발급하면 그 익명 이메일로 인증이 통과한다.
+            return userRepository.findById(stored.get().getUserId())
+                    .filter(user -> user.getDeletedAt() == null)
+                    .map(this::issueTokens)
+                    .orElse(null);
+        });
+        if (issued == null) {
             throw new InvalidRequestException("만료되었거나 이미 사용된 로그인 정보입니다. 다시 로그인해 주세요.");
         }
-
-        // 같은 토큰을 든 두 요청은 둘 다 위 조회에서 행을 찾는다. 삭제는 한쪽만 성공하므로 지운 행 수로 누가
-        // 이겼는지 가린다. 진 쪽은 거의 항상 같은 사람의 다른 탭이라 탈취로 보지 않고 세션을 끊지 않는다.
-        if (refreshTokenRepository.deleteClaimed(stored.get().getId()) == 0) {
-            throw new BusinessException(ErrorCode.TOKEN_ALREADY_ROTATED,
-                    "다른 창에서 로그인이 먼저 갱신됐어요. 다시 시도해 주세요.");
-        }
-        User user = userRepository.findById(stored.get().getUserId())
-                .orElseThrow(() -> new InvalidRequestException("유효하지 않은 리프레시 토큰입니다."));
-        return issueTokens(user);
+        return issued;
     }
 
     /**

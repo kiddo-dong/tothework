@@ -3,6 +3,7 @@ package com.tothework.workforce.attendance;
 import com.tothework.identity.api.UserSummary;
 import com.tothework.shared.error.InvalidRequestException;
 import com.tothework.shared.error.NotFoundException;
+import com.tothework.shared.web.DateRanges;
 import com.tothework.store.api.BreakPolicy;
 import com.tothework.store.api.Membership;
 import com.tothework.store.api.Memberships;
@@ -74,12 +75,14 @@ public class AttendanceService {
     }
 
     public List<AttendanceResponse> getMyAttendance(Long storeId, Long userId, LocalDate from, LocalDate to) {
+        DateRanges.requireValid(from, to);
         Membership member = storeAccess.requireMember(storeId, userId);
         return toResponses(storeId,
                 attendanceRepository.findAllByMemberIdAndWorkDateBetweenOrderByWorkDateDesc(member.memberId(), from, to));
     }
 
     public List<AttendanceResponse> getStoreAttendance(Long storeId, Long userId, LocalDate from, LocalDate to) {
+        DateRanges.requireValid(from, to);
         storeAccess.requireOwnerOrManager(storeId, userId);
         return toResponses(storeId,
                 attendanceRepository.findAllByStoreIdAndWorkDateBetweenOrderByWorkDateDesc(storeId, from, to));

@@ -3,6 +3,7 @@ package com.tothework.workforce.shift;
 import com.tothework.identity.api.UserSummary;
 import com.tothework.shared.error.InvalidRequestException;
 import com.tothework.shared.error.NotFoundException;
+import com.tothework.shared.web.DateRanges;
 import com.tothework.store.api.BreakPolicy;
 import com.tothework.store.api.StoreAccess;
 import com.tothework.store.api.StorePolicy;
@@ -120,6 +121,7 @@ public class ShiftService {
     }
 
     public List<ShiftResponse> getShifts(Long storeId, Long userId, Long storeMemberId, LocalDate from, LocalDate to) {
+        DateRanges.requireValid(from, to);
         storeAccess.requireMember(storeId, userId);
         List<Shift> shifts;
         if (storeMemberId != null) {

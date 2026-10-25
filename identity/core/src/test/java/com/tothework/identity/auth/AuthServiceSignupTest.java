@@ -110,6 +110,52 @@ class AuthServiceSignupTest {
         return social;
     }
 
+    private void givenMailWasSentJustNow(EmailTokenType type) {
+        when(emailTokenRepository.existsByUserIdAndTypeAndCreatedAtAfter(org.mockito.ArgumentMatchers.eq(1L),
+                org.mockito.ArgumentMatchers.eq(type), any())).thenReturn(true);
+    }
+
+    /** 재발송을 연타하거나 남의 이메일로 반복 호출해도 1분에 한 통만 나간다. Gmail 하루 한도를 지키기 위해서다. */
+    @Test
+    void resendVerificationWaitsForTheCooldown() {
+        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(unverifiedLocalUser()));
+        givenMailWasSentJustNow(EmailTokenType.VERIFY_EMAIL);
+
+        assertThatThrownBy(() -> authService.resendVerification(EMAIL))
+                .isInstanceOf(com.tothework.shared.error.TooManyRequestsException.class);
+        verify(mailService, never()).send(anyString(), anyString(), anyString());
+    }
+
+    @Test
+    void resendVerificationSendsWhenTheLastMailIsOldEnough() {
+        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(unverifiedLocalUser()));
+
+        authService.resendVerification(EMAIL);
+
+        verify(mailService).send(org.mockito.ArgumentMatchers.eq(EMAIL), anyString(), anyString());
+    }
+
+    /** 비밀번호 재설정은 계정 존재 여부를 드러내지 않도록 오류 없이 넘어가되, 메일은 다시 보내지 않는다. */
+    @Test
+    void passwordResetQuietlySkipsAMailSentJustNow() {
+        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(verifiedLocalUser()));
+        givenMailWasSentJustNow(EmailTokenType.PASSWORD_RESET);
+
+        assertThatCode(() -> authService.requestPasswordReset(EMAIL)).doesNotThrowAnyException();
+        verify(mailService, never()).send(anyString(), anyString(), anyString());
+    }
+
+    /** 미인증 계정에 다시 가입하는 경로도 인증 메일을 보내므로 같은 간격을 지킨다. */
+    @Test
+    void resubmittedSignupWaitsForTheCooldown() {
+        when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.of(unverifiedLocalUser()));
+        givenMailWasSentJustNow(EmailTokenType.VERIFY_EMAIL);
+
+        assertThatThrownBy(() -> authService.signup(signupRequest()))
+                .isInstanceOf(com.tothework.shared.error.TooManyRequestsException.class);
+        verify(mailService, never()).send(anyString(), anyString(), anyString());
+    }
+
     @Test
     void signupCreatesTheAccountWhenTheEmailIsFree() {
         when(userRepository.findByEmail(EMAIL)).thenReturn(Optional.empty());

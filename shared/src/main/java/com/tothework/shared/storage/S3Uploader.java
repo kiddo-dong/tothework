@@ -3,9 +3,12 @@ package com.tothework.shared.storage;
 import com.tothework.shared.error.InvalidRequestException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.UUID;
 import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -34,6 +37,15 @@ public class S3Uploader {
      * 내용은 안 받아도(304) 왕복은 그대로라, 멤버 목록처럼 사진이 여럿인 화면에서 그만큼 요청이 는다.
      */
     private static final String IMMUTABLE_CACHE_CONTROL = "public, max-age=31536000, immutable";
+
+    /**
+     * 디코딩을 허락하는 최대 픽셀 수 (약 2,500만, 5000×5000). 디코딩하면 픽셀당 4바이트 안팎이라 이 크기면 100MB 정도다.
+     *
+     * <p>업로드 크기 제한(10MB)만으로는 부족하다. 한 가지 색으로 칠한 1만×1만 PNG는 압축하면 수백 KB인데 풀면
+     * 400MB가 되어, 작은 서버는 업로드 한 번에 메모리가 바닥난다. 그래서 헤더의 가로·세로를 먼저 읽고 거른다.
+     * 휴대폰 사진(1200만 화소)은 넉넉히 통과한다.
+     */
+    static final long MAX_PIXELS = 25_000_000L;
 
     private final S3Client s3Client;
     private final String bucketName;
@@ -75,6 +87,7 @@ public class S3Uploader {
         if (contentType == null || !ALLOWED_IMAGE_CONTENT_TYPES.contains(contentType)) {
             throw new InvalidRequestException("이미지 파일(JPEG/PNG/GIF)만 업로드할 수 있습니다.");
         }
+        rejectOversizedDimensions(content);
         try {
             if (ImageIO.read(new ByteArrayInputStream(content)) == null) {
                 throw new InvalidRequestException("올바른 이미지 파일이 아닙니다.");
@@ -93,6 +106,28 @@ public class S3Uploader {
                         .build(),
                 RequestBody.fromBytes(content));
         return key;
+    }
+
+    /** 픽셀을 풀지 않고 헤더의 가로·세로만 읽어, 너무 큰 이미지를 디코딩 전에 거절한다. */
+    private static void rejectOversizedDimensions(byte[] content) {
+        try (ImageInputStream input = ImageIO.createImageInputStream(new ByteArrayInputStream(content))) {
+            Iterator<ImageReader> readers = input == null ? null : ImageIO.getImageReaders(input);
+            if (readers == null || !readers.hasNext()) {
+                throw new InvalidRequestException("올바른 이미지 파일이 아닙니다.");
+            }
+            ImageReader reader = readers.next();
+            try {
+                reader.setInput(input, true, true);
+                long pixels = (long) reader.getWidth(0) * reader.getHeight(0);
+                if (pixels > MAX_PIXELS) {
+                    throw new InvalidRequestException("이미지 해상도가 너무 큽니다. 5000×5000 이하로 줄여서 올려 주세요.");
+                }
+            } finally {
+                reader.dispose();
+            }
+        } catch (IOException e) {
+            throw new InvalidRequestException("올바른 이미지 파일이 아닙니다.");
+        }
     }
 
     public void delete(String key) {

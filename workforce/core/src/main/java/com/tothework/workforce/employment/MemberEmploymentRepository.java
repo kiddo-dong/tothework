@@ -1,6 +1,7 @@
 package com.tothework.workforce.employment;
 
 import com.tothework.workforce.config.WorkforceSchema;
+import java.time.LocalDateTime;
 import java.util.Optional;
 import org.springframework.data.relational.core.sql.LockMode;
 import org.springframework.data.relational.repository.Lock;
@@ -21,12 +22,17 @@ interface MemberEmploymentRepository extends ListCrudRepository<MemberEmployment
      * 공유 락을 건다. 여러 트랜잭션이 공유 락을 함께 쥔 채 곧이어 쓰기 락을 요청하면 서로를 기다려 교착 상태가
      * 된다(동시성 테스트에서 실제로 났다). ON DUPLICATE KEY UPDATE는 중복 행에 배타 락을 걸어 줄이 바로 선다.
      */
+    default void insertDefaultIfAbsent(Long memberId, Long storeId) {
+        insertDefaultIfAbsent(memberId, storeId, LocalDateTime.now());
+    }
+
+    /** 시각은 앱이 넘긴다. SQL의 NOW()는 DB 세션 시간대를 따라, 앱이 저장하는 다른 시각과 어긋날 수 있다. */
     @Modifying
     @Query("INSERT INTO " + WorkforceSchema.NAME + ".employment_terms"
             + " (member_id, store_id, hourly_wage, tax_mode, version, created_at, updated_at)"
-            + " VALUES (:memberId, :storeId, 0, 'NONE', 0, NOW(6), NOW(6))"
+            + " VALUES (:memberId, :storeId, 0, 'NONE', 0, :now, :now)"
             + " ON DUPLICATE KEY UPDATE member_id = member_id")
-    void insertDefaultIfAbsent(Long memberId, Long storeId);
+    void insertDefaultIfAbsent(Long memberId, Long storeId, LocalDateTime now);
 
     /** 근무 가능 요일은 같은 스키마의 CASCADE로 함께 지워진다. */
     @Modifying

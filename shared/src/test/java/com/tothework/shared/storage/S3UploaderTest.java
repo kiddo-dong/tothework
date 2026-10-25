@@ -136,6 +136,32 @@ class S3UploaderTest {
         assertThat(s3Uploader.toPublicUrl(null)).isNull();
     }
 
+    /**
+     * 압축 폭탄: 헤더가 2만×2만(4억 픽셀)이라고 주장하는 PNG. 디코딩하면 1.6GB가 필요하므로 풀기 전에 거절해야 한다.
+     * 실제 픽셀 데이터는 2×2라 이 테스트가 메모리를 쓰지 않는다 — 헤더만 보고 거르는지가 핵심이다.
+     */
+    @Test
+    void store_rejectsAHugeResolutionBeforeDecodingIt() throws IOException {
+        byte[] bomb = withPngDimensions(realPngBytes(), 20_000, 20_000);
+
+        assertThatThrownBy(() -> s3Uploader.store(bomb, "image/png", "bomb.png", "profile-images"))
+                .isInstanceOf(InvalidRequestException.class)
+                .hasMessageContaining("해상도");
+        verify(s3Client, never()).putObject(any(PutObjectRequest.class), any(software.amazon.awssdk.core.sync.RequestBody.class));
+    }
+
+    /** PNG 첫 청크(IHDR)의 가로·세로를 바꾸고 CRC를 다시 계산한다. */
+    private static byte[] withPngDimensions(byte[] png, int width, int height) {
+        byte[] patched = png.clone();
+        java.nio.ByteBuffer buffer = java.nio.ByteBuffer.wrap(patched);
+        buffer.putInt(16, width);
+        buffer.putInt(20, height);
+        java.util.zip.CRC32 crc = new java.util.zip.CRC32();
+        crc.update(patched, 12, 17); // 청크 타입(4) + 데이터(13)
+        buffer.putInt(29, (int) crc.getValue());
+        return patched;
+    }
+
     private static byte[] realPngBytes() throws IOException {
         BufferedImage image = new BufferedImage(2, 2, BufferedImage.TYPE_INT_RGB);
         ByteArrayOutputStream out = new ByteArrayOutputStream();

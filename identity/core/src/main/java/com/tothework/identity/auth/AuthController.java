@@ -2,6 +2,7 @@ package com.tothework.identity.auth;
 
 import com.tothework.identity.config.IdentityProperties;
 import com.tothework.identity.user.AuthProvider;
+import com.tothework.shared.ratelimit.RateLimit;
 import com.tothework.shared.security.JwtProperties;
 import com.tothework.shared.web.ApiResponse;
 import com.tothework.shared.error.InvalidRequestException;
@@ -36,6 +37,8 @@ public class AuthController {
     private final JwtProperties jwtProperties;
     private final IdentityProperties properties;
 
+    /** 로그인 없이 부르는 경로라 호출 제한은 IP 기준이다. 한 매장 직원들이 같은 공유기를 써도 막히지 않을 만큼 둔다. */
+    @RateLimit(limit = 10, windowMinutes = 10)
     @PostMapping("/signup")
     public ResponseEntity<ApiResponse<Long>> signup(@Valid @RequestBody SignupRequest request) {
         Long userId = authService.signup(request);
@@ -43,6 +46,7 @@ public class AuthController {
     }
 
     /** 액세스 토큰은 본문으로, 리프레시 토큰은 HttpOnly 쿠키로 내려간다 (XSS 탈취 방지). */
+    @RateLimit(limit = 20, windowMinutes = 10) // 비밀번호 대입 방지
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<TokenResponse>> login(@Valid @RequestBody LoginRequest request) {
         return tokenResponseWithCookie(authService.login(request));
@@ -73,6 +77,7 @@ public class AuthController {
                 .body(ApiResponse.ok());
     }
 
+    @RateLimit(limit = 20, windowMinutes = 10)
     @PostMapping("/oauth/{provider}")
     public ResponseEntity<ApiResponse<TokenResponse>> oauthLogin(@PathVariable String provider,
             @Valid @RequestBody OAuthLoginRequest request) {
@@ -101,18 +106,21 @@ public class AuthController {
                 .build();
     }
 
+    @RateLimit(limit = 5, windowMinutes = 10) // 메일 발송. Gmail 하루 한도를 지킨다
     @PostMapping("/resend-verification")
     public ApiResponse<Void> resendVerification(@Valid @RequestBody EmailRequest request) {
         authService.resendVerification(request.email());
         return ApiResponse.ok();
     }
 
+    @RateLimit(limit = 5, windowMinutes = 10) // 메일 발송
     @PostMapping("/password-reset/request")
     public ApiResponse<Void> requestPasswordReset(@Valid @RequestBody EmailRequest request) {
         authService.requestPasswordReset(request.email());
         return ApiResponse.ok();
     }
 
+    @RateLimit(limit = 10, windowMinutes = 10)
     @PostMapping("/password-reset/confirm")
     public ApiResponse<Void> confirmPasswordReset(@Valid @RequestBody PasswordResetConfirmRequest request) {
         authService.confirmPasswordReset(request);

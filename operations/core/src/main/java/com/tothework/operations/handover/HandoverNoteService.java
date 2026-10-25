@@ -6,6 +6,7 @@ import com.tothework.operations.api.HandoverNotes;
 import com.tothework.operations.people.MemberProfiles;
 import com.tothework.shared.error.ForbiddenException;
 import com.tothework.shared.error.NotFoundException;
+import com.tothework.shared.web.DateRanges;
 import com.tothework.store.api.Membership;
 import com.tothework.store.api.StoreAccess;
 import java.time.LocalDate;
@@ -34,6 +35,7 @@ public class HandoverNoteService implements HandoverNotes {
     }
 
     public List<HandoverNoteResponse> getNotes(Long storeId, Long userId, LocalDate from, LocalDate to) {
+        DateRanges.requireValid(from, to);
         storeAccess.requireMember(storeId, userId);
         return withAuthors(storeId,
                 handoverNoteRepository.findAllByStoreIdAndWorkDateBetweenOrderByCreatedAtDesc(storeId, from, to));

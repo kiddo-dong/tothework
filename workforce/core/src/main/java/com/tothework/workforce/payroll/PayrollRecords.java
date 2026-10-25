@@ -3,6 +3,7 @@ package com.tothework.workforce.payroll;
 import com.tothework.workforce.config.WorkforceSchema;
 import com.tothework.workforce.payroll.calc.MonthlyPay;
 import com.tothework.workforce.payroll.calc.PayrollCalculator.PayrollResult;
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
@@ -29,7 +30,7 @@ class PayrollRecords {
                         + " net_pay, generated_at, created_at, updated_at)"
                         + " VALUES (:memberId, :storeId, :year, :month, :regularPay, :overtimePay, :nightPay,"
                         + " :holidayWorkPay, :weeklyHolidayPay, :leavePay, :totalPay, :deduction, :netPay,"
-                        + " NOW(6), NOW(6), NOW(6)) AS incoming"
+                        + " :now, :now, :now) AS incoming"
                         + " ON DUPLICATE KEY UPDATE regular_pay = incoming.regular_pay,"
                         + " overtime_pay = incoming.overtime_pay, night_pay = incoming.night_pay,"
                         + " holiday_work_pay = incoming.holiday_work_pay,"
@@ -49,6 +50,8 @@ class PayrollRecords {
                 .param("totalPay", pay.totalPay())
                 .param("deduction", pay.deduction())
                 .param("netPay", pay.netPay())
+                // DB의 NOW()는 세션 시간대를 따르므로 앱의 시각을 넘긴다
+                .param("now", LocalDateTime.now())
                 .update();
     }
 

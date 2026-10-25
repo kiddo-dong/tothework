@@ -2,6 +2,7 @@ package com.tothework.workforce.attendance;
 
 import com.tothework.identity.api.UserSummary;
 import com.tothework.shared.error.ForbiddenException;
+import com.tothework.shared.web.DateRanges;
 import com.tothework.store.api.Membership;
 import com.tothework.store.api.StoreAccess;
 import com.tothework.workforce.api.WorkComplianceStatus;
@@ -45,6 +46,7 @@ public class AttendanceReportService {
 
     public List<AttendanceReportEntry> getReport(Long storeId, Long userId, Long storeMemberId,
             LocalDate from, LocalDate to) {
+        DateRanges.requireValid(from, to);
         Membership requester = storeAccess.requireMember(storeId, userId);
         boolean selfOnly = storeMemberId != null && requester.memberId().equals(storeMemberId);
         if (!selfOnly && !requester.isOwnerOrManager()) {

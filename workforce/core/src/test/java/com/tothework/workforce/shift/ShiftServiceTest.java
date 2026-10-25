@@ -216,6 +216,16 @@ class ShiftServiceTest {
                 .hasMessageContaining("휴무");
     }
 
+    /** 몇 년치 조회는 DB를 읽기 전에 거절한다. */
+    @Test
+    void anOverlyLongQueryRangeIsRejectedBeforeReading() {
+        assertThatThrownBy(() -> shiftService.getShifts(STORE_ID, USER_ID, null, MONDAY, MONDAY.plusYears(3)))
+                .isInstanceOf(InvalidRequestException.class)
+                .hasMessageContaining("최대");
+        verify(shiftRepository, never()).findAllByStoreIdAndWorkDateBetweenOrderByWorkDateAscStartTimeAsc(any(),
+                any(), any());
+    }
+
     /** 5인 미만 사업장의 성인은 주간 상한 검사 자체를 건너뛴다(그 주의 스케줄을 조회하지도 않는다). */
     @Test
     void aSmallBusinessSkipsTheWeeklyLimitForAdults() {

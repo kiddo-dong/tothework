@@ -12,10 +12,12 @@ import com.tothework.shared.error.BusinessException;
 import com.tothework.shared.error.ConflictException;
 import com.tothework.shared.error.ErrorCode;
 import com.tothework.shared.error.InvalidRequestException;
+import com.tothework.shared.error.TooManyRequestsException;
 import com.tothework.shared.security.JwtTokens;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HexFormat;
 import java.util.List;
@@ -44,6 +46,12 @@ public class AuthService {
 
     private static final int VERIFY_EMAIL_EXPIRATION_HOURS = 24;
     private static final int PASSWORD_RESET_EXPIRATION_MINUTES = 30;
+    /**
+     * 같은 계정에 같은 종류의 메일을 다시 보내기까지 기다리는 시간. IP별 호출 제한만으로는 여러 IP에서 한 사람에게
+     * 메일을 퍼붓는 것을 막지 못하고, Gmail SMTP의 하루 발송 한도를 다 쓰면 모든 신규 가입자의 인증 메일이 실패한다.
+     */
+    static final Duration MAIL_COOLDOWN = Duration.ofSeconds(60);
+    private static final String MAIL_COOLDOWN_MESSAGE = "방금 메일을 보냈어요. 1분 뒤에 다시 시도해 주세요.";
 
     private final UserRepository userRepository;
     private final EmailTokenRepository emailTokenRepository;
@@ -91,6 +99,9 @@ public class AuthService {
         if (existing.isEmailVerified() || existing.getProvider() != AuthProvider.LOCAL) {
             throw new ConflictException("이미 가입된 이메일입니다.");
         }
+        if (mailedRecently(existing, EmailTokenType.VERIFY_EMAIL)) {
+            throw new TooManyRequestsException(MAIL_COOLDOWN_MESSAGE);
+        }
         if (userRepository.existsByPhoneAndIdNot(request.phone(), existing.getId())) {
             throw new ConflictException("이미 가입된 전화번호입니다.");
         }
@@ -106,6 +117,11 @@ public class AuthService {
         EmailToken token = emailTokenRepository.save(EmailToken.issue(user.getId(), UUID.randomUUID().toString(),
                 EmailTokenType.VERIFY_EMAIL, LocalDateTime.now().plusHours(VERIFY_EMAIL_EXPIRATION_HOURS)));
         return new VerificationMail(user.getId(), user.getEmail(), user.getName(), token.getToken());
+    }
+
+    private boolean mailedRecently(User user, EmailTokenType type) {
+        return emailTokenRepository.existsByUserIdAndTypeAndCreatedAtAfter(user.getId(), type,
+                LocalDateTime.now().minus(MAIL_COOLDOWN));
     }
 
     /** 인증 링크는 API를 가리킨다. 토큰 처리는 서버가 하고, 끝나면 사용자를 프론트 화면으로 넘긴다. */
@@ -141,6 +157,9 @@ public class AuthService {
             if (user.getProvider() != AuthProvider.LOCAL || user.isEmailVerified()) {
                 throw new InvalidRequestException("이메일 인증이 필요한 계정이 아닙니다.");
             }
+            if (mailedRecently(user, EmailTokenType.VERIFY_EMAIL)) {
+                throw new TooManyRequestsException(MAIL_COOLDOWN_MESSAGE);
+            }
             return prepareVerificationMail(user);
         });
         sendVerificationMail(mail);
@@ -148,10 +167,12 @@ public class AuthService {
 
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void requestPasswordReset(String email) {
-        // 계정 존재 여부가 노출되지 않도록, 없는 이메일이거나 소셜 계정이어도 조용히 성공 처리한다
+        // 계정 존재 여부가 노출되지 않도록, 없는 이메일이거나 소셜 계정이어도 조용히 성공 처리한다.
+        // 방금 보낸 계정도 같은 이유로 오류 없이 넘어간다(다시 보내지만 않는다).
         PasswordResetMail mail = new TransactionTemplate(transactionManager).execute(status ->
                 userRepository.findByEmail(email)
                         .filter(user -> user.getProvider() == AuthProvider.LOCAL)
+                        .filter(user -> !mailedRecently(user, EmailTokenType.PASSWORD_RESET))
                         .map(user -> {
                             EmailToken token = emailTokenRepository.save(EmailToken.issue(user.getId(),
                                     UUID.randomUUID().toString(), EmailTokenType.PASSWORD_RESET,

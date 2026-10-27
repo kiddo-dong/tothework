@@ -1,0 +1,3982 @@
+{
+  "info": {
+    "name": "ToTheWork API",
+    "description": "컨트롤러 소스에서 생성한 전체 API (117개).\n\n사용 순서: 01 인증 > POST /auth/login 을 보내면 accessToken이 자동 저장된다. 03 매장 > POST /stores 나 GET /stores 가 storeId를 저장한다. 생성 API는 응답 id를 해당 변수에 저장한다.\n\n리프레시 토큰은 HttpOnly 쿠키라 Postman 쿠키 저장소가 /api/v1/auth 경로로 자동으로 보낸다.\nmemberId는 직접 채운다 (GET /stores/{storeId}/members 응답의 id). 내 memberId는 GET /stores가 myMemberId에 저장한다.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "adminToken",
+      "value": ""
+    },
+    {
+      "key": "storeId",
+      "value": ""
+    },
+    {
+      "key": "memberId",
+      "value": ""
+    },
+    {
+      "key": "myMemberId",
+      "value": ""
+    },
+    {
+      "key": "requestId",
+      "value": ""
+    },
+    {
+      "key": "shiftId",
+      "value": ""
+    },
+    {
+      "key": "templateId",
+      "value": ""
+    },
+    {
+      "key": "attendanceId",
+      "value": ""
+    },
+    {
+      "key": "leaveId",
+      "value": ""
+    },
+    {
+      "key": "checklistItemId",
+      "value": ""
+    },
+    {
+      "key": "noticeId",
+      "value": ""
+    },
+    {
+      "key": "noteId",
+      "value": ""
+    },
+    {
+      "key": "manualId",
+      "value": ""
+    },
+    {
+      "key": "supplierId",
+      "value": ""
+    },
+    {
+      "key": "supplierItemId",
+      "value": ""
+    },
+    {
+      "key": "ingredientId",
+      "value": ""
+    },
+    {
+      "key": "menuId",
+      "value": ""
+    },
+    {
+      "key": "sessionId",
+      "value": ""
+    },
+    {
+      "key": "stepKey",
+      "value": "business-hours"
+    },
+    {
+      "key": "provider",
+      "value": "kakao"
+    },
+    {
+      "key": "date",
+      "value": "2026-11-02"
+    },
+    {
+      "key": "from",
+      "value": "2026-11-02"
+    },
+    {
+      "key": "to",
+      "value": "2026-11-08"
+    },
+    {
+      "key": "year",
+      "value": "2026"
+    },
+    {
+      "key": "month",
+      "value": "11"
+    }
+  ],
+  "item": [
+    {
+      "name": "01 인증",
+      "item": [
+        {
+          "name": "POST /api/v1/auth/signup",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/signup",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "signup"
+              ],
+              "query": []
+            },
+            "description": "리프레시 토큰 쿠키 이름. HttpOnly라 JS에서 읽을 수 없고, 브라우저가 /api/v1/auth 요청에만 자동 첨부한다. */\n    private static final String REFRESH_COOKIE_NAME = \"refreshToken\";\n    private static final String AUTH_COOKIE_PATH = \"/api/v1/auth\";\n\n    private final AuthService authService;\n\n    private final JwtProperties jwtProperties;\n    private final IdentityProperties properties;\n\n    /** 로그인 없이 부르는 경로라 호출 제한은 IP 기준이다. 한 매장 직원들이 같은 공유기를 써도 막히지 않을 만큼 둔다.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"owner@example.com\",\n  \"password\": \"Test1234!\",\n  \"passwordConfirm\": \"Test1234!\",\n  \"name\": \"홍길동\",\n  \"phone\": \"010-1234-5678\",\n  \"birthDate\": \"1995-03-01\",\n  \"agreedToTerms\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST /api/v1/auth/login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ],
+              "query": []
+            },
+            "description": "리프레시 토큰 쿠키 이름. HttpOnly라 JS에서 읽을 수 없고, 브라우저가 /api/v1/auth 요청에만 자동 첨부한다. */\n    private static final String REFRESH_COOKIE_NAME = \"refreshToken\";\n    private static final String AUTH_COOKIE_PATH = \"/api/v1/auth\";\n\n    private final AuthService authService;\n\n    private final JwtProperties jwtProperties;\n    private final IdentityProperties properties;\n\n    /** 로그인 없이 부르는 경로라 호출 제한은 IP 기준이다. 한 매장 직원들이 같은 공유기를 써도 막히지 않을 만큼 둔다. */\n    @RateLimit(limit = 10, windowMinutes = 10)\n    @PostMapping(\"/signup\")\n    public ResponseEntity<ApiResponse<Long>> signup(@Valid @RequestBody SignupRequest request) {\n        Long userId = authService.signup(request);\n        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(userId));\n    }\n\n    /** 액세스 토큰은 본문으로, 리프레시 토큰은 HttpOnly 쿠키로 내려간다 (XSS 탈취 방지).",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"owner@example.com\",\n  \"password\": \"Test1234!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "if (data && data.accessToken) pm.collectionVariables.set('accessToken', data.accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/v1/auth/refresh",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "refresh"
+              ],
+              "query": []
+            },
+            "description": "리프레시 토큰 쿠키 이름. HttpOnly라 JS에서 읽을 수 없고, 브라우저가 /api/v1/auth 요청에만 자동 첨부한다. */\n    private static final String REFRESH_COOKIE_NAME = \"refreshToken\";\n    private static final String AUTH_COOKIE_PATH = \"/api/v1/auth\";\n\n    private final AuthService authService;\n\n    private final JwtProperties jwtProperties;\n    private final IdentityProperties properties;\n\n    /** 로그인 없이 부르는 경로라 호출 제한은 IP 기준이다. 한 매장 직원들이 같은 공유기를 써도 막히지 않을 만큼 둔다. */\n    @RateLimit(limit = 10, windowMinutes = 10)\n    @PostMapping(\"/signup\")\n    public ResponseEntity<ApiResponse<Long>> signup(@Valid @RequestBody SignupRequest request) {\n        Long userId = authService.signup(request);\n        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(userId));\n    }\n\n    /** 액세스 토큰은 본문으로, 리프레시 토큰은 HttpOnly 쿠키로 내려간다 (XSS 탈취 방지). */\n    @RateLimit(limit = 20, windowMinutes = 10) // 비밀번호 대입 방지\n    @PostMapping(\"/login\")\n    public ResponseEntity<ApiResponse<TokenResponse>> login(@Valid @RequestBody LoginRequest request) {\n        return tokenResponseWithCookie(authService.login(request));\n    }\n\n    /** 본문 없이 호출한다. 리프레시 토큰은 브라우저가 쿠키로 자동 첨부하며, 재발급 시 쿠키도 새 토큰으로 교체된다.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "if (data && data.accessToken) pm.collectionVariables.set('accessToken', data.accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/v1/auth/logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "logout"
+              ],
+              "query": []
+            },
+            "description": "리프레시 토큰 쿠키 이름. HttpOnly라 JS에서 읽을 수 없고, 브라우저가 /api/v1/auth 요청에만 자동 첨부한다. */\n    private static final String REFRESH_COOKIE_NAME = \"refreshToken\";\n    private static final String AUTH_COOKIE_PATH = \"/api/v1/auth\";\n\n    private final AuthService authService;\n\n    private final JwtProperties jwtProperties;\n    private final IdentityProperties properties;\n\n    /** 로그인 없이 부르는 경로라 호출 제한은 IP 기준이다. 한 매장 직원들이 같은 공유기를 써도 막히지 않을 만큼 둔다. */\n    @RateLimit(limit = 10, windowMinutes = 10)\n    @PostMapping(\"/signup\")\n    public ResponseEntity<ApiResponse<Long>> signup(@Valid @RequestBody SignupRequest request) {\n        Long userId = authService.signup(request);\n        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(userId));\n    }\n\n    /** 액세스 토큰은 본문으로, 리프레시 토큰은 HttpOnly 쿠키로 내려간다 (XSS 탈취 방지). */\n    @RateLimit(limit = 20, windowMinutes = 10) // 비밀번호 대입 방지\n    @PostMapping(\"/login\")\n    public ResponseEntity<ApiResponse<TokenResponse>> login(@Valid @RequestBody LoginRequest request) {\n        return tokenResponseWithCookie(authService.login(request));\n    }\n\n    /** 본문 없이 호출한다. 리프레시 토큰은 브라우저가 쿠키로 자동 첨부하며, 재발급 시 쿠키도 새 토큰으로 교체된다. */\n    @PostMapping(\"/refresh\")\n    public ResponseEntity<ApiResponse<TokenResponse>> refresh(\n            @CookieValue(value = REFRESH_COOKIE_NAME, required = false) String refreshToken) {\n        if (refreshToken == null || refreshToken.isBlank()) {\n            throw new InvalidRequestException(\"리프레시 토큰 쿠키가 없습니다. 다시 로그인해 주세요.\");\n        }\n        return tokenResponseWithCookie(authService.refresh(refreshToken));\n    }\n\n    /** 서버에 저장된 리프레시 토큰을 폐기하고 쿠키도 만료시킨다. 쿠키만 지우면 토큰 자체는 살아 있어 값을 미리 복사해 둔 쪽이 계속 재발급을 받을 수 있으므로, 서버 기록을 지우는 쪽이 실제 로그아웃이다. 액세스 토큰은 별도 폐기 수단이 없고 15분이면 만료되므로 클라이언트가 버리면 된다.\n",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "POST /api/v1/auth/oauth/{provider}",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/oauth/{{provider}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "oauth",
+                "{{provider}}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accessToken\": \"<소셜 제공자가 준 access token>\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json().data;",
+                  "if (data && data.accessToken) pm.collectionVariables.set('accessToken', data.accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/auth/verify-email",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/verify-email?token=<메일로 받은 토큰>",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "verify-email"
+              ],
+              "query": [
+                {
+                  "key": "token",
+                  "value": "<메일로 받은 토큰>",
+                  "disabled": false,
+                  "description": "필수"
+                }
+              ]
+            },
+            "description": "리프레시 토큰 쿠키 이름. HttpOnly라 JS에서 읽을 수 없고, 브라우저가 /api/v1/auth 요청에만 자동 첨부한다. */\n    private static final String REFRESH_COOKIE_NAME = \"refreshToken\";\n    private static final String AUTH_COOKIE_PATH = \"/api/v1/auth\";\n\n    private final AuthService authService;\n\n    private final JwtProperties jwtProperties;\n    private final IdentityProperties properties;\n\n    /** 로그인 없이 부르는 경로라 호출 제한은 IP 기준이다. 한 매장 직원들이 같은 공유기를 써도 막히지 않을 만큼 둔다. */\n    @RateLimit(limit = 10, windowMinutes = 10)\n    @PostMapping(\"/signup\")\n    public ResponseEntity<ApiResponse<Long>> signup(@Valid @RequestBody SignupRequest request) {\n        Long userId = authService.signup(request);\n        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(userId));\n    }\n\n    /** 액세스 토큰은 본문으로, 리프레시 토큰은 HttpOnly 쿠키로 내려간다 (XSS 탈취 방지). */\n    @RateLimit(limit = 20, windowMinutes = 10) // 비밀번호 대입 방지\n    @PostMapping(\"/login\")\n    public ResponseEntity<ApiResponse<TokenResponse>> login(@Valid @RequestBody LoginRequest request) {\n        return tokenResponseWithCookie(authService.login(request));\n    }\n\n    /** 본문 없이 호출한다. 리프레시 토큰은 브라우저가 쿠키로 자동 첨부하며, 재발급 시 쿠키도 새 토큰으로 교체된다. */\n    @PostMapping(\"/refresh\")\n    public ResponseEntity<ApiResponse<TokenResponse>> refresh(\n            @CookieValue(value = REFRESH_COOKIE_NAME, required = false) String refreshToken) {\n        if (refreshToken == null || refreshToken.isBlank()) {\n            throw new InvalidRequestException(\"리프레시 토큰 쿠키가 없습니다. 다시 로그인해 주세요.\");\n        }\n        return tokenResponseWithCookie(authService.refresh(refreshToken));\n    }\n\n    /** 서버에 저장된 리프레시 토큰을 폐기하고 쿠키도 만료시킨다. 쿠키만 지우면 토큰 자체는 살아 있어 값을 미리 복사해 둔 쪽이 계속 재발급을 받을 수 있으므로, 서버 기록을 지우는 쪽이 실제 로그아웃이다. 액세스 토큰은 별도 폐기 수단이 없고 15분이면 만료되므로 클라이언트가 버리면 된다. /\n    @PostMapping(\"/logout\")\n    public ResponseEntity<ApiResponse<Void>> logout(\n            @CookieValue(value = REFRESH_COOKIE_NAME, required = false) String refreshToken) {\n        authService.logout(refreshToken);\n        ResponseCookie expiredCookie = refreshCookieBuilder(\"\").maxAge(Duration.ZERO).build();\n        return ResponseEntity.ok()\n                .header(HttpHeaders.SET_COOKIE, expiredCookie.toString())\n                .body(ApiResponse.ok());\n    }\n\n    @RateLimit(limit = 20, windowMinutes = 10)\n    @PostMapping(\"/oauth/{provider}\")\n    public ResponseEntity<ApiResponse<TokenResponse>> oauthLogin(@PathVariable String provider,\n            @Valid @RequestBody OAuthLoginRequest request) {\n        AuthProvider authProvider = parseProvider(provider);\n        return tokenResponseWithCookie(authService.oauthLogin(authProvider, request.accessToken()));\n    }\n\n    /** 메일의 인증 링크가 향하는 곳. 사용자가 브라우저로 직접 여는 유일한 API라서, 응답 JSON을 그대로 보여주는 대신 결과만 붙여 프론트 로그인 화면으로 넘긴다.      * <p>만료되거나 이미 쓴 링크도 에러 응답으로 끊지 않는다. 사용자는 안내 화면을 봐야 하는데 그건 프론트가 할 일이기 때문이다.\n",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "POST /api/v1/auth/resend-verification",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/resend-verification",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "resend-verification"
+              ],
+              "query": []
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"owner@example.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST /api/v1/auth/password-reset/request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/password-reset/request",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "password-reset",
+                "request"
+              ],
+              "query": []
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"owner@example.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST /api/v1/auth/password-reset/confirm",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/password-reset/confirm",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "password-reset",
+                "confirm"
+              ],
+              "query": []
+            },
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"<메일로 받은 토큰>\",\n  \"newPassword\": \"NewPass1234!\",\n  \"newPasswordConfirm\": \"NewPass1234!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 내 정보",
+      "item": [
+        {
+          "name": "GET /api/v1/users/me",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "me"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "PATCH /api/v1/users/me",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "me"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"홍길동\",\n  \"phone\": \"010-1234-5678\",\n  \"birthDate\": \"1995-03-01\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST /api/v1/users/me/complete-profile",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/me/complete-profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "me",
+                "complete-profile"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"홍길동\",\n  \"phone\": \"010-1234-5678\",\n  \"birthDate\": \"1995-03-01\",\n  \"agreedToTerms\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE /api/v1/users/me",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "me"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "PATCH /api/v1/users/me/password",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/me/password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "me",
+                "password"
+              ],
+              "query": []
+            },
+            "description": "비밀번호 규칙과 세션 폐기가 모두 여기 있어, 경로만 /users/me 아래에 두고 처리는 위임한다. */\n    private final AuthService authService;\n\n    @GetMapping\n    public ApiResponse<UserResponse> getMe(@CurrentUserId Long userId) {\n        return ApiResponse.success(userService.getMe(userId));\n    }\n\n    @PatchMapping\n    public ApiResponse<UserResponse> updateMe(@CurrentUserId Long userId,\n            @Valid @RequestBody UpdateUserRequest request) {\n        return ApiResponse.success(userService.updateMe(userId, request));\n    }\n\n    @PostMapping(\"/complete-profile\")\n    public ApiResponse<UserResponse> completeProfile(@CurrentUserId Long userId,\n            @Valid @RequestBody CompleteProfileRequest request) {\n        return ApiResponse.success(userService.completeProfile(userId, request));\n    }\n\n    @DeleteMapping\n    public ApiResponse<Void> withdraw(@CurrentUserId Long userId) {\n        userService.withdraw(userId);\n        return ApiResponse.ok();\n    }\n\n    /** 로그인 상태에서 비밀번호 변경. 성공하면 모든 기기에서 로그아웃되므로 다시 로그인해야 한다.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"Test1234!\",\n  \"newPassword\": \"NewPass1234!\",\n  \"newPasswordConfirm\": \"NewPass1234!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST /api/v1/users/me/profile-image",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/me/profile-image",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "me",
+                "profile-image"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "DELETE /api/v1/users/me/profile-image",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/me/profile-image",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "me",
+                "profile-image"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 매장",
+      "item": [
+        {
+          "name": "POST /api/v1/stores",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"알밤카페 마포점\",\n  \"address\": \"서울시 마포구 월드컵로 1\",\n  \"businessRegistrationNumber\": \"123-45-67890\",\n  \"category\": \"CAFE\",\n  \"businessHours\": {\n    \"MONDAY\": {\n      \"openTime\": \"09:00\",\n      \"closeTime\": \"22:00\",\n      \"closed\": false\n    },\n    \"TUESDAY\": {\n      \"openTime\": \"09:00\",\n      \"closeTime\": \"22:00\",\n      \"closed\": false\n    },\n    \"WEDNESDAY\": {\n      \"openTime\": \"09:00\",\n      \"closeTime\": \"22:00\",\n      \"closed\": false\n    },\n    \"THURSDAY\": {\n      \"openTime\": \"09:00\",\n      \"closeTime\": \"22:00\",\n      \"closed\": false\n    },\n    \"FRIDAY\": {\n      \"openTime\": \"09:00\",\n      \"closeTime\": \"22:00\",\n      \"closed\": false\n    },\n    \"SATURDAY\": {\n      \"openTime\": \"09:00\",\n      \"closeTime\": \"22:00\",\n      \"closed\": false\n    },\n    \"SUNDAY\": {\n      \"openTime\": \"09:00\",\n      \"closeTime\": \"22:00\",\n      \"closed\": false\n    }\n  },\n  \"breakPolicy\": \"STATUTORY\",\n  \"smallBusiness\": true,\n  \"payday\": 10\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const created = pm.response.json().data;",
+                  "if (created && created.id) pm.collectionVariables.set('storeId', created.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/stores",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores"
+              ],
+              "query": []
+            },
+            "description": "내가 속한 매장 목록 (역할 무관, 재직 중인 매장만) + 각 매장에서의 내 역할."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const stores = pm.response.json().data;",
+                  "if (stores && stores.length) {",
+                  "  pm.collectionVariables.set('storeId', stores[0].store.id);",
+                  "  pm.collectionVariables.set('myMemberId', stores[0].myStoreMemberId);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/v1/stores/{storeId}/profile-image",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/profile-image",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "profile-image"
+              ],
+              "query": []
+            },
+            "description": "내가 속한 매장 목록 (역할 무관, 재직 중인 매장만) + 각 매장에서의 내 역할. */\n    @GetMapping\n    public ApiResponse<List<MyStoreResponse>> getMyStores(@CurrentUserId Long userId) {\n        return ApiResponse.success(storeService.getMyStores(userId));\n    }\n\n    /** 매장 대표 사진 등록·교체 — OWNER 전용.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "DELETE /api/v1/stores/{storeId}/profile-image",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/profile-image",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "profile-image"
+              ],
+              "query": []
+            },
+            "description": "내가 속한 매장 목록 (역할 무관, 재직 중인 매장만) + 각 매장에서의 내 역할. */\n    @GetMapping\n    public ApiResponse<List<MyStoreResponse>> getMyStores(@CurrentUserId Long userId) {\n        return ApiResponse.success(storeService.getMyStores(userId));\n    }\n\n    /** 매장 대표 사진 등록·교체 — OWNER 전용. */\n    @PostMapping(\"/{storeId}/profile-image\")\n    public ApiResponse<StoreResponse> updateProfileImage(@PathVariable Long storeId,\n            @CurrentUserId Long userId, @RequestParam(\"image\") MultipartFile image) {\n        return ApiResponse.success(storeService.updateProfileImage(storeId, userId, image));\n    }\n\n    /** 매장 대표 사진 삭제 — OWNER 전용."
+          }
+        },
+        {
+          "name": "GET /api/v1/stores/{storeId}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "PATCH /api/v1/stores/{storeId}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"알밤카페 마포점\",\n  \"address\": \"서울시 마포구 월드컵로 1\",\n  \"businessRegistrationNumber\": \"123-45-67890\",\n  \"category\": \"CAFE\",\n  \"businessHours\": {\n    \"MONDAY\": {\n      \"openTime\": \"09:00\",\n      \"closeTime\": \"22:00\",\n      \"closed\": false\n    },\n    \"TUESDAY\": {\n      \"openTime\": \"09:00\",\n      \"closeTime\": \"22:00\",\n      \"closed\": false\n    },\n    \"WEDNESDAY\": {\n      \"openTime\": \"09:00\",\n      \"closeTime\": \"22:00\",\n      \"closed\": false\n    },\n    \"THURSDAY\": {\n      \"openTime\": \"09:00\",\n      \"closeTime\": \"22:00\",\n      \"closed\": false\n    },\n    \"FRIDAY\": {\n      \"openTime\": \"09:00\",\n      \"closeTime\": \"22:00\",\n      \"closed\": false\n    },\n    \"SATURDAY\": {\n      \"openTime\": \"09:00\",\n      \"closeTime\": \"22:00\",\n      \"closed\": false\n    },\n    \"SUNDAY\": {\n      \"openTime\": \"09:00\",\n      \"closeTime\": \"22:00\",\n      \"closed\": false\n    }\n  },\n  \"breakPolicy\": \"STATUTORY\",\n  \"smallBusiness\": true,\n  \"payday\": 10\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE /api/v1/stores/{storeId}",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}?confirmName=알밤카페 마포점",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}"
+              ],
+              "query": [
+                {
+                  "key": "confirmName",
+                  "value": "알밤카페 마포점",
+                  "disabled": false,
+                  "description": "필수"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "GET /api/v1/stores/{storeId}/invite-code",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/invite-code",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "invite-code"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "POST /api/v1/stores/{storeId}/invite-code/regenerate",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/invite-code/regenerate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "invite-code",
+                "regenerate"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "POST /api/v1/stores/{storeId}/transfer-ownership",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/transfer-ownership",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "transfer-ownership"
+              ],
+              "query": []
+            },
+            "description": "내가 속한 매장 목록 (역할 무관, 재직 중인 매장만) + 각 매장에서의 내 역할. */\n    @GetMapping\n    public ApiResponse<List<MyStoreResponse>> getMyStores(@CurrentUserId Long userId) {\n        return ApiResponse.success(storeService.getMyStores(userId));\n    }\n\n    /** 매장 대표 사진 등록·교체 — OWNER 전용. */\n    @PostMapping(\"/{storeId}/profile-image\")\n    public ApiResponse<StoreResponse> updateProfileImage(@PathVariable Long storeId,\n            @CurrentUserId Long userId, @RequestParam(\"image\") MultipartFile image) {\n        return ApiResponse.success(storeService.updateProfileImage(storeId, userId, image));\n    }\n\n    /** 매장 대표 사진 삭제 — OWNER 전용. */\n    @DeleteMapping(\"/{storeId}/profile-image\")\n    public ApiResponse<StoreResponse> deleteProfileImage(@PathVariable Long storeId,\n            @CurrentUserId Long userId) {\n        return ApiResponse.success(storeService.deleteProfileImage(storeId, userId));\n    }\n\n    @GetMapping(\"/{storeId}\")\n    public ApiResponse<StoreResponse> getStore(@PathVariable Long storeId, @CurrentUserId Long userId) {\n        return ApiResponse.success(storeService.getStore(storeId, userId));\n    }\n\n    @PatchMapping(\"/{storeId}\")\n    public ApiResponse<StoreResponse> updateStore(@PathVariable Long storeId, @CurrentUserId Long userId,\n            @Valid @RequestBody UpdateStoreRequest request) {\n        return ApiResponse.success(storeService.updateStore(storeId, userId, request));\n    }\n\n    @DeleteMapping(\"/{storeId}\")\n    public ApiResponse<Void> deleteStore(@PathVariable Long storeId, @CurrentUserId Long userId,\n            @RequestParam String confirmName) {\n        storeService.deleteStore(storeId, userId, confirmName);\n        return ApiResponse.ok();\n    }\n\n    @GetMapping(\"/{storeId}/invite-code\")\n    public ApiResponse<InviteCodeResponse> getInviteCode(@PathVariable Long storeId, @CurrentUserId Long userId) {\n        return ApiResponse.success(storeService.getInviteCode(storeId, userId));\n    }\n\n    @PostMapping(\"/{storeId}/invite-code/regenerate\")\n    public ApiResponse<InviteCodeResponse> regenerateInviteCode(@PathVariable Long storeId,\n            @CurrentUserId Long userId) {\n        return ApiResponse.success(storeService.regenerateInviteCode(storeId, userId));\n    }\n\n    /** 소유권 이전: 다른 재직 멤버를 OWNER로 올리고 본인은 MANAGER로 내려간다 (OWNER 전용, 매장 이름 확인 필수).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetMemberId\": {{memberId}},\n  \"confirmName\": \"알밤카페 마포점\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 온보딩",
+      "item": [
+        {
+          "name": "GET /api/v1/stores/{storeId}/onboarding",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/onboarding",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "onboarding"
+              ],
+              "query": []
+            },
+            "description": "온보딩 진행 상태 — OWNER 전용."
+          }
+        },
+        {
+          "name": "POST /api/v1/stores/{storeId}/onboarding/steps/{stepKey}",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/onboarding/steps/{{stepKey}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "onboarding",
+                "steps",
+                "{{stepKey}}"
+              ],
+              "query": []
+            },
+            "description": "온보딩 진행 상태 — OWNER 전용. */\n    @GetMapping\n    public ApiResponse<OnboardingResponse> getOnboarding(@PathVariable Long storeId,\n            @CurrentUserId Long userId) {\n        return ApiResponse.success(storeOnboardingService.getOnboarding(storeId, userId));\n    }\n\n    /** 단계 확인 처리 — OWNER 전용. 같은 단계를 다시 보내도 결과가 같다."
+          }
+        },
+        {
+          "name": "POST /api/v1/stores/{storeId}/onboarding/complete",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/onboarding/complete",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "onboarding",
+                "complete"
+              ],
+              "query": []
+            },
+            "description": "온보딩 진행 상태 — OWNER 전용. */\n    @GetMapping\n    public ApiResponse<OnboardingResponse> getOnboarding(@PathVariable Long storeId,\n            @CurrentUserId Long userId) {\n        return ApiResponse.success(storeOnboardingService.getOnboarding(storeId, userId));\n    }\n\n    /** 단계 확인 처리 — OWNER 전용. 같은 단계를 다시 보내도 결과가 같다. */\n    @PostMapping(\"/steps/{stepKey}\")\n    public ApiResponse<OnboardingResponse> confirmStep(@PathVariable Long storeId,\n            @CurrentUserId Long userId, @PathVariable String stepKey) {\n        return ApiResponse.success(storeOnboardingService.confirmStep(storeId, userId, stepKey));\n    }\n\n    /** 온보딩 마침 — OWNER 전용. 여러 번 눌러도 처음 끝낸 시각이 유지된다."
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 참여 신청",
+      "item": [
+        {
+          "name": "POST /api/v1/join-requests",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/join-requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "join-requests"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"<초대코드 6자리>\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const created = pm.response.json().data;",
+                  "if (created && created.id) pm.collectionVariables.set('requestId', created.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/join-requests/me",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/join-requests/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "join-requests",
+                "me"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "DELETE /api/v1/join-requests/{requestId}",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/join-requests/{{requestId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "join-requests",
+                "{{requestId}}"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "GET /api/v1/stores/{storeId}/join-requests",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/join-requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "join-requests"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "POST /api/v1/stores/{storeId}/join-requests/{requestId}/approve",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/join-requests/{{requestId}}/approve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "join-requests",
+                "{{requestId}}",
+                "approve"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"STAFF\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST /api/v1/stores/{storeId}/join-requests/{requestId}/reject",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/join-requests/{{requestId}}/reject",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "join-requests",
+                "{{requestId}}",
+                "reject"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 구성원 (bff)",
+      "item": [
+        {
+          "name": "GET /api/v1/stores/{storeId}/members",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/members",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "members"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "PATCH /api/v1/stores/{storeId}/members/{memberId}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/members/{{memberId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "members",
+                "{{memberId}}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"MANAGER\",\n  \"title\": \"홀팀장\",\n  \"hourlyWage\": 10320,\n  \"status\": \"ACTIVE\",\n  \"availableDays\": [\n    \"MONDAY\",\n    \"WEDNESDAY\",\n    \"FRIDAY\"\n  ],\n  \"weeklyHolidayDay\": \"MONDAY\",\n  \"taxMode\": \"NONE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "PATCH /api/v1/stores/{storeId}/members/me/available-days",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/members/me/available-days",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "members",
+                "me",
+                "available-days"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"availableDays\": [\n    \"MONDAY\",\n    \"WEDNESDAY\",\n    \"FRIDAY\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 구성원 (store)",
+      "item": [
+        {
+          "name": "GET /api/v1/stores/{storeId}/members/summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/members/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "members",
+                "summary"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "DELETE /api/v1/stores/{storeId}/members/me",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/members/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "members",
+                "me"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "DELETE /api/v1/stores/{storeId}/members/{memberId}",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/members/{{memberId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "members",
+                "{{memberId}}"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 스케줄",
+      "item": [
+        {
+          "name": "POST /api/v1/stores/{storeId}/shifts",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/shifts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "shifts"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"storeMemberId\": {{memberId}},\n  \"workDate\": \"{{date}}\",\n  \"startTime\": \"09:00\",\n  \"endTime\": \"15:00\",\n  \"breakMinutes\": 30\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const created = pm.response.json().data;",
+                  "if (created && created.id) pm.collectionVariables.set('shiftId', created.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/v1/stores/{storeId}/shifts/recurring",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/shifts/recurring",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "shifts",
+                "recurring"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"storeMemberId\": {{memberId}},\n  \"daysOfWeek\": [\n    \"MONDAY\",\n    \"WEDNESDAY\",\n    \"FRIDAY\"\n  ],\n  \"startTime\": \"09:00\",\n  \"endTime\": \"15:00\",\n  \"breakMinutes\": 30,\n  \"periodStart\": \"{{from}}\",\n  \"periodEnd\": \"{{to}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "GET /api/v1/stores/{storeId}/shifts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/shifts?from={{from}}&to={{to}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "shifts"
+              ],
+              "query": [
+                {
+                  "key": "storeMemberId",
+                  "value": "{{memberId}}",
+                  "disabled": true,
+                  "description": "선택"
+                },
+                {
+                  "key": "from",
+                  "value": "{{from}}",
+                  "disabled": false,
+                  "description": "필수"
+                },
+                {
+                  "key": "to",
+                  "value": "{{to}}",
+                  "disabled": false,
+                  "description": "필수"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "PATCH /api/v1/stores/{storeId}/shifts/{shiftId}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/shifts/{{shiftId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "shifts",
+                "{{shiftId}}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"workDate\": \"{{date}}\",\n  \"startTime\": \"09:00\",\n  \"endTime\": \"15:00\",\n  \"breakMinutes\": 30,\n  \"status\": \"SCHEDULED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE /api/v1/stores/{storeId}/shifts/{shiftId}",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/shifts/{{shiftId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "shifts",
+                "{{shiftId}}"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 AI 스케줄 초안",
+      "item": [
+        {
+          "name": "POST /api/v1/stores/{storeId}/shifts/ai-draft",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/shifts/ai-draft",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "shifts",
+                "ai-draft"
+              ],
+              "query": []
+            },
+            "description": "AI 스케줄 초안 생성 (OWNER/MANAGER). 저장되지 않으며, 기존 법정 검증을 통과한 항목만 accepted로 내려온다.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"periodStart\": \"{{from}}\",\n  \"periodEnd\": \"{{to}}\",\n  \"requirement\": \"주말에는 2명 이상 배정해 주세요\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST /api/v1/stores/{storeId}/shifts/ai-draft/confirm",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/shifts/ai-draft/confirm",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "shifts",
+                "ai-draft",
+                "confirm"
+              ],
+              "query": []
+            },
+            "description": "AI 스케줄 초안 생성 (OWNER/MANAGER). 저장되지 않으며, 기존 법정 검증을 통과한 항목만 accepted로 내려온다. */\n    @RateLimit(limit = 5, windowMinutes = 10)\n    @PostMapping\n    public ApiResponse<ScheduleDraftResponse> generateDraft(@PathVariable Long storeId,\n            @CurrentUserId Long userId, @Valid @RequestBody ScheduleDraftRequest request) {\n        return ApiResponse.success(scheduleAiService.generateDraft(storeId, userId, request));\n    }\n\n    /** 사용자가 확인/수정한 초안을 실제 스케줄로 확정 저장 (OWNER/MANAGER).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"storeMemberId\": {{memberId}},\n      \"memberName\": \"홍길동\",\n      \"workDate\": \"{{date}}\",\n      \"startTime\": \"09:00\",\n      \"endTime\": \"15:00\",\n      \"breakMinutes\": 30\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 근무유형 템플릿",
+      "item": [
+        {
+          "name": "POST /api/v1/stores/{storeId}/shift-templates",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/shift-templates",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "shift-templates"
+              ],
+              "query": []
+            },
+            "description": "템플릿 등록 (OWNER/MANAGER). 예: \"오픈\" 09:00~15:00, 휴게 30분.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"오픈\",\n  \"startTime\": \"09:00\",\n  \"endTime\": \"15:00\",\n  \"breakMinutes\": 30,\n  \"displayOrder\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const created = pm.response.json().data;",
+                  "if (created && created.id) pm.collectionVariables.set('templateId', created.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/v1/stores/{storeId}/shift-templates/bulk",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/shift-templates/bulk",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "shift-templates",
+                "bulk"
+              ],
+              "query": []
+            },
+            "description": "템플릿 등록 (OWNER/MANAGER). 예: \"오픈\" 09:00~15:00, 휴게 30분. */\n    @PostMapping\n    public ResponseEntity<ApiResponse<ShiftTemplateResponse>> createTemplate(@PathVariable Long storeId,\n            @CurrentUserId Long userId, @Valid @RequestBody ShiftTemplateRequest request) {\n        return ResponseEntity.status(HttpStatus.CREATED)\n                .body(ApiResponse.success(shiftTemplateService.createTemplate(storeId, userId, request)));\n    }\n\n    /** 템플릿 목록 — 멤버 누구나 (스케줄 화면에서 프리셋 버튼으로 사용). */\n    /** 근무 유형 일괄 등록 (OWNER/MANAGER).      * <p>배열 순서대로 순번이 매겨지며, 이름이 겹치거나 하나라도 실패하면 전부 등록되지 않는다.\n",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"name\": \"오픈\",\n      \"startTime\": \"09:00\",\n      \"endTime\": \"15:00\",\n      \"breakMinutes\": 30,\n      \"displayOrder\": 0\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "GET /api/v1/stores/{storeId}/shift-templates",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/shift-templates",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "shift-templates"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "PATCH /api/v1/stores/{storeId}/shift-templates/{templateId}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/shift-templates/{{templateId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "shift-templates",
+                "{{templateId}}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"오픈\",\n  \"startTime\": \"09:00\",\n  \"endTime\": \"15:00\",\n  \"breakMinutes\": 30,\n  \"displayOrder\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE /api/v1/stores/{storeId}/shift-templates/{templateId}",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/shift-templates/{{templateId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "shift-templates",
+                "{{templateId}}"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 근태",
+      "item": [
+        {
+          "name": "POST /api/v1/stores/{storeId}/attendance",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/attendance",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "attendance"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"storeMemberId\": {{memberId}},\n  \"clockInAt\": \"{{date}}T09:00:00\",\n  \"clockOutAt\": \"{{date}}T18:00:00\",\n  \"breakMinutes\": 30\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const created = pm.response.json().data;",
+                  "if (created && created.id) pm.collectionVariables.set('attendanceId', created.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/v1/stores/{storeId}/attendance/clock-in",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/attendance/clock-in",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "attendance",
+                "clock-in"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "POST /api/v1/stores/{storeId}/attendance/clock-out",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/attendance/clock-out",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "attendance",
+                "clock-out"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "GET /api/v1/stores/{storeId}/attendance/me",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/attendance/me?from={{from}}&to={{to}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "attendance",
+                "me"
+              ],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "{{from}}",
+                  "disabled": false,
+                  "description": "필수"
+                },
+                {
+                  "key": "to",
+                  "value": "{{to}}",
+                  "disabled": false,
+                  "description": "필수"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "GET /api/v1/stores/{storeId}/attendance",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/attendance?from={{from}}&to={{to}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "attendance"
+              ],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "{{from}}",
+                  "disabled": false,
+                  "description": "필수"
+                },
+                {
+                  "key": "to",
+                  "value": "{{to}}",
+                  "disabled": false,
+                  "description": "필수"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "GET /api/v1/stores/{storeId}/attendance/report",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/attendance/report?from={{from}}&to={{to}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "attendance",
+                "report"
+              ],
+              "query": [
+                {
+                  "key": "storeMemberId",
+                  "value": "{{memberId}}",
+                  "disabled": true,
+                  "description": "선택"
+                },
+                {
+                  "key": "from",
+                  "value": "{{from}}",
+                  "disabled": false,
+                  "description": "필수"
+                },
+                {
+                  "key": "to",
+                  "value": "{{to}}",
+                  "disabled": false,
+                  "description": "필수"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "PATCH /api/v1/stores/{storeId}/attendance/{attendanceId}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/attendance/{{attendanceId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "attendance",
+                "{{attendanceId}}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clockInAt\": \"{{date}}T09:00:00\",\n  \"clockOutAt\": \"{{date}}T18:00:00\",\n  \"breakMinutes\": 30\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE /api/v1/stores/{storeId}/attendance/{attendanceId}",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/attendance/{{attendanceId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "attendance",
+                "{{attendanceId}}"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "11 연차",
+      "item": [
+        {
+          "name": "GET /api/v1/stores/{storeId}/members/{memberId}/leaves",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/members/{{memberId}}/leaves",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "members",
+                "{{memberId}}",
+                "leaves"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "POST /api/v1/stores/{storeId}/members/{memberId}/leaves",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/members/{{memberId}}/leaves",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "members",
+                "{{memberId}}",
+                "leaves"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"leaveDate\": \"{{date}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const created = pm.response.json().data;",
+                  "if (created && created.id) pm.collectionVariables.set('leaveId', created.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "DELETE /api/v1/stores/{storeId}/leaves/{leaveId}",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/leaves/{{leaveId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "leaves",
+                "{{leaveId}}"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "12 급여",
+      "item": [
+        {
+          "name": "GET /api/v1/stores/{storeId}/payroll",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/payroll?memberId={{memberId}}&year={{year}}&month={{month}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "payroll"
+              ],
+              "query": [
+                {
+                  "key": "memberId",
+                  "value": "{{memberId}}",
+                  "disabled": false,
+                  "description": "필수"
+                },
+                {
+                  "key": "year",
+                  "value": "{{year}}",
+                  "disabled": false,
+                  "description": "필수"
+                },
+                {
+                  "key": "month",
+                  "value": "{{month}}",
+                  "disabled": false,
+                  "description": "필수"
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "GET /api/v1/stores/{storeId}/payroll/payslip",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/payroll/payslip?memberId={{memberId}}&year={{year}}&month={{month}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "payroll",
+                "payslip"
+              ],
+              "query": [
+                {
+                  "key": "memberId",
+                  "value": "{{memberId}}",
+                  "disabled": false,
+                  "description": "필수"
+                },
+                {
+                  "key": "year",
+                  "value": "{{year}}",
+                  "disabled": false,
+                  "description": "필수"
+                },
+                {
+                  "key": "month",
+                  "value": "{{month}}",
+                  "disabled": false,
+                  "description": "필수"
+                }
+              ]
+            },
+            "description": "임금명세서 상세 (항목별 금액 + 근로시간 산정 근거 + 공제 + 일별 기록). 본인 또는 관리자."
+          }
+        },
+        {
+          "name": "GET /api/v1/stores/{storeId}/payroll/me/estimate",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/payroll/me/estimate?year={{year}}&month={{month}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "payroll",
+                "me",
+                "estimate"
+              ],
+              "query": [
+                {
+                  "key": "year",
+                  "value": "{{year}}",
+                  "disabled": false,
+                  "description": "필수"
+                },
+                {
+                  "key": "month",
+                  "value": "{{month}}",
+                  "disabled": false,
+                  "description": "필수"
+                }
+              ]
+            },
+            "description": "임금명세서 상세 (항목별 금액 + 근로시간 산정 근거 + 공제 + 일별 기록). 본인 또는 관리자. */\n    @GetMapping(\"/payslip\")\n    public ApiResponse<PayslipResponse> getPayslip(@PathVariable Long storeId, @CurrentUserId Long userId,\n            @RequestParam Long memberId, @RequestParam int year, @RequestParam int month) {\n        return ApiResponse.success(payrollService.getPayslip(storeId, memberId, userId, year, month));\n    }\n\n    /** 알바생 본인의 이번 달 예상 월급 (확정 근태 + 남은 스케줄 기반 추정)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "13 대시보드",
+      "item": [
+        {
+          "name": "GET /api/v1/stores/{storeId}/dashboard",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/dashboard?year={{year}}&month={{month}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "dashboard"
+              ],
+              "query": [
+                {
+                  "key": "year",
+                  "value": "{{year}}",
+                  "disabled": false,
+                  "description": "필수"
+                },
+                {
+                  "key": "month",
+                  "value": "{{month}}",
+                  "disabled": false,
+                  "description": "필수"
+                }
+              ]
+            },
+            "description": "월간 대시보드: 인건비 합계, 멤버별 비용, 근태 준수 현황 (OWNER/MANAGER)."
+          }
+        },
+        {
+          "name": "GET /api/v1/stores/{storeId}/dashboard/daily",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/dashboard/daily?",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "dashboard",
+                "daily"
+              ],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "{{date}}",
+                  "disabled": true,
+                  "description": "선택"
+                }
+              ]
+            },
+            "description": "월간 대시보드: 인건비 합계, 멤버별 비용, 근태 준수 현황 (OWNER/MANAGER). */\n    @GetMapping(\"/api/v1/stores/{storeId}/dashboard\")\n    public ApiResponse<DashboardResponse> getDashboard(@PathVariable Long storeId,\n            @CurrentUserId Long userId, @RequestParam int year, @RequestParam int month) {\n        return ApiResponse.success(storeDashboardService.getDashboard(storeId, userId, year, month));\n    }\n\n    /** 일일 대시보드: 그날의 근무·근태 요약, 기본 오늘 (OWNER/MANAGER)."
+          }
+        },
+        {
+          "name": "GET /api/v1/stores/{storeId}/dashboard/weekly",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/dashboard/weekly?",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "dashboard",
+                "weekly"
+              ],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "{{date}}",
+                  "disabled": true,
+                  "description": "선택"
+                }
+              ]
+            },
+            "description": "월간 대시보드: 인건비 합계, 멤버별 비용, 근태 준수 현황 (OWNER/MANAGER). */\n    @GetMapping(\"/api/v1/stores/{storeId}/dashboard\")\n    public ApiResponse<DashboardResponse> getDashboard(@PathVariable Long storeId,\n            @CurrentUserId Long userId, @RequestParam int year, @RequestParam int month) {\n        return ApiResponse.success(storeDashboardService.getDashboard(storeId, userId, year, month));\n    }\n\n    /** 일일 대시보드: 그날의 근무·근태 요약, 기본 오늘 (OWNER/MANAGER). */\n    @GetMapping(\"/api/v1/stores/{storeId}/dashboard/daily\")\n    public ApiResponse<DailyDashboardResponse> getDailyDashboard(@PathVariable Long storeId,\n            @CurrentUserId Long userId,\n            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {\n        return ApiResponse.success(storeDashboardService.getDailyDashboard(storeId, userId,\n                date == null ? LocalDate.now() : date));\n    }\n\n    /** 주간 대시보드: 주 52시간·주휴 15시간 모니터링, date가 속한 주(월~일), 기본 이번 주 (OWNER/MANAGER)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "14 홈",
+      "item": [
+        {
+          "name": "GET /api/v1/stores/{storeId}/home",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/home",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "home"
+              ],
+              "query": []
+            },
+            "description": "매장 홈 화면. 역할에 따라 공통(myDay) / 관리자 섹션이 채워진다."
+          }
+        }
+      ]
+    },
+    {
+      "name": "15 체크리스트",
+      "item": [
+        {
+          "name": "POST /api/v1/stores/{storeId}/checklist-items",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/checklist-items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "checklist-items"
+              ],
+              "query": []
+            },
+            "description": "체크리스트 항목 등록 (OWNER/MANAGER).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"OPEN\",\n  \"content\": \"커피머신 예열\",\n  \"displayOrder\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const created = pm.response.json().data;",
+                  "if (created && created.id) pm.collectionVariables.set('checklistItemId', created.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /api/v1/stores/{storeId}/checklist-items/bulk",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/checklist-items/bulk",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "checklist-items",
+                "bulk"
+              ],
+              "query": []
+            },
+            "description": "체크리스트 항목 등록 (OWNER/MANAGER). */\n    @PostMapping(\"/api/v1/stores/{storeId}/checklist-items\")\n    public ResponseEntity<ApiResponse<ChecklistItemResponse>> addItem(@PathVariable Long storeId,\n            @CurrentUserId Long userId, @Valid @RequestBody ChecklistItemRequest request) {\n        return ResponseEntity.status(HttpStatus.CREATED)\n                .body(ApiResponse.success(checklistService.addItem(storeId, userId, request)));\n    }\n\n    /** 체크리스트 항목 일괄 등록 (OWNER/MANAGER).      * <p>배열 순서대로 순번이 매겨지며, 하나라도 실패하면 전부 등록되지 않는다. 업종 프리셋을 넣는 온보딩처럼 여러 항목을 한꺼번에 넣을 때 쓴다.\n",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"type\": \"OPEN\",\n      \"content\": \"커피머신 예열\",\n      \"displayOrder\": 0\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "GET /api/v1/stores/{storeId}/checklist-items",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/checklist-items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "checklist-items"
+              ],
+              "query": []
+            },
+            "description": "체크리스트 항목 등록 (OWNER/MANAGER). */\n    @PostMapping(\"/api/v1/stores/{storeId}/checklist-items\")\n    public ResponseEntity<ApiResponse<ChecklistItemResponse>> addItem(@PathVariable Long storeId,\n            @CurrentUserId Long userId, @Valid @RequestBody ChecklistItemRequest request) {\n        return ResponseEntity.status(HttpStatus.CREATED)\n                .body(ApiResponse.success(checklistService.addItem(storeId, userId, request)));\n    }\n\n    /** 체크리스트 항목 일괄 등록 (OWNER/MANAGER).      * <p>배열 순서대로 순번이 매겨지며, 하나라도 실패하면 전부 등록되지 않는다. 업종 프리셋을 넣는 온보딩처럼 여러 항목을 한꺼번에 넣을 때 쓴다. /\n    @PostMapping(\"/api/v1/stores/{storeId}/checklist-items/bulk\")\n    public ResponseEntity<ApiResponse<List<ChecklistItemResponse>>> addItems(@PathVariable Long storeId,\n            @CurrentUserId Long userId, @Valid @RequestBody ChecklistItemBulkRequest request) {\n        return ResponseEntity.status(HttpStatus.CREATED)\n                .body(ApiResponse.success(checklistService.addItems(storeId, userId, request)));\n    }\n\n    /** 항목 마스터 목록 — 멤버 누구나."
+          }
+        },
+        {
+          "name": "PATCH /api/v1/stores/{storeId}/checklist-items/{itemId}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/checklist-items/{{checklistItemId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "checklist-items",
+                "{{checklistItemId}}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"OPEN\",\n  \"content\": \"커피머신 예열\",\n  \"displayOrder\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE /api/v1/stores/{storeId}/checklist-items/{itemId}",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/checklist-items/{{checklistItemId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "checklist-items",
+                "{{checklistItemId}}"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "GET /api/v1/stores/{storeId}/checklist",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/checklist?",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "checklist"
+              ],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "{{date}}",
+                  "disabled": true,
+                  "description": "선택"
+                }
+              ]
+            },
+            "description": "체크리스트 항목 등록 (OWNER/MANAGER). */\n    @PostMapping(\"/api/v1/stores/{storeId}/checklist-items\")\n    public ResponseEntity<ApiResponse<ChecklistItemResponse>> addItem(@PathVariable Long storeId,\n            @CurrentUserId Long userId, @Valid @RequestBody ChecklistItemRequest request) {\n        return ResponseEntity.status(HttpStatus.CREATED)\n                .body(ApiResponse.success(checklistService.addItem(storeId, userId, request)));\n    }\n\n    /** 체크리스트 항목 일괄 등록 (OWNER/MANAGER).      * <p>배열 순서대로 순번이 매겨지며, 하나라도 실패하면 전부 등록되지 않는다. 업종 프리셋을 넣는 온보딩처럼 여러 항목을 한꺼번에 넣을 때 쓴다. /\n    @PostMapping(\"/api/v1/stores/{storeId}/checklist-items/bulk\")\n    public ResponseEntity<ApiResponse<List<ChecklistItemResponse>>> addItems(@PathVariable Long storeId,\n            @CurrentUserId Long userId, @Valid @RequestBody ChecklistItemBulkRequest request) {\n        return ResponseEntity.status(HttpStatus.CREATED)\n                .body(ApiResponse.success(checklistService.addItems(storeId, userId, request)));\n    }\n\n    /** 항목 마스터 목록 — 멤버 누구나. */\n    @GetMapping(\"/api/v1/stores/{storeId}/checklist-items\")\n    public ApiResponse<List<ChecklistItemResponse>> getItems(@PathVariable Long storeId,\n            @CurrentUserId Long userId) {\n        return ApiResponse.success(checklistService.getItems(storeId, userId));\n    }\n\n    @PatchMapping(\"/api/v1/stores/{storeId}/checklist-items/{itemId}\")\n    public ApiResponse<ChecklistItemResponse> updateItem(@PathVariable Long storeId,\n            @PathVariable Long itemId, @CurrentUserId Long userId,\n            @Valid @RequestBody ChecklistItemRequest request) {\n        return ApiResponse.success(checklistService.updateItem(storeId, itemId, userId, request));\n    }\n\n    @DeleteMapping(\"/api/v1/stores/{storeId}/checklist-items/{itemId}\")\n    public ApiResponse<Void> deleteItem(@PathVariable Long storeId, @PathVariable Long itemId,\n            @CurrentUserId Long userId) {\n        checklistService.deleteItem(storeId, itemId, userId);\n        return ApiResponse.ok();\n    }\n\n    /** 특정 날짜(기본 오늘)의 체크 현황 — 멤버 누구나."
+          }
+        },
+        {
+          "name": "POST /api/v1/stores/{storeId}/checklist-items/{itemId}/check",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/checklist-items/{{checklistItemId}}/check?",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "checklist-items",
+                "{{checklistItemId}}",
+                "check"
+              ],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "{{date}}",
+                  "disabled": true,
+                  "description": "선택"
+                }
+              ]
+            },
+            "description": "체크리스트 항목 등록 (OWNER/MANAGER). */\n    @PostMapping(\"/api/v1/stores/{storeId}/checklist-items\")\n    public ResponseEntity<ApiResponse<ChecklistItemResponse>> addItem(@PathVariable Long storeId,\n            @CurrentUserId Long userId, @Valid @RequestBody ChecklistItemRequest request) {\n        return ResponseEntity.status(HttpStatus.CREATED)\n                .body(ApiResponse.success(checklistService.addItem(storeId, userId, request)));\n    }\n\n    /** 체크리스트 항목 일괄 등록 (OWNER/MANAGER).      * <p>배열 순서대로 순번이 매겨지며, 하나라도 실패하면 전부 등록되지 않는다. 업종 프리셋을 넣는 온보딩처럼 여러 항목을 한꺼번에 넣을 때 쓴다. /\n    @PostMapping(\"/api/v1/stores/{storeId}/checklist-items/bulk\")\n    public ResponseEntity<ApiResponse<List<ChecklistItemResponse>>> addItems(@PathVariable Long storeId,\n            @CurrentUserId Long userId, @Valid @RequestBody ChecklistItemBulkRequest request) {\n        return ResponseEntity.status(HttpStatus.CREATED)\n                .body(ApiResponse.success(checklistService.addItems(storeId, userId, request)));\n    }\n\n    /** 항목 마스터 목록 — 멤버 누구나. */\n    @GetMapping(\"/api/v1/stores/{storeId}/checklist-items\")\n    public ApiResponse<List<ChecklistItemResponse>> getItems(@PathVariable Long storeId,\n            @CurrentUserId Long userId) {\n        return ApiResponse.success(checklistService.getItems(storeId, userId));\n    }\n\n    @PatchMapping(\"/api/v1/stores/{storeId}/checklist-items/{itemId}\")\n    public ApiResponse<ChecklistItemResponse> updateItem(@PathVariable Long storeId,\n            @PathVariable Long itemId, @CurrentUserId Long userId,\n            @Valid @RequestBody ChecklistItemRequest request) {\n        return ApiResponse.success(checklistService.updateItem(storeId, itemId, userId, request));\n    }\n\n    @DeleteMapping(\"/api/v1/stores/{storeId}/checklist-items/{itemId}\")\n    public ApiResponse<Void> deleteItem(@PathVariable Long storeId, @PathVariable Long itemId,\n            @CurrentUserId Long userId) {\n        checklistService.deleteItem(storeId, itemId, userId);\n        return ApiResponse.ok();\n    }\n\n    /** 특정 날짜(기본 오늘)의 체크 현황 — 멤버 누구나. */\n    @GetMapping(\"/api/v1/stores/{storeId}/checklist\")\n    public ApiResponse<List<DailyChecklistEntry>> getDailyChecklist(@PathVariable Long storeId,\n            @CurrentUserId Long userId,\n            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {\n        return ApiResponse.success(checklistService.getDailyChecklist(storeId, userId,\n                date == null ? LocalDate.now() : date));\n    }\n\n    /** 항목 체크 (기본 오늘, 멱등) — 멤버 누구나."
+          }
+        },
+        {
+          "name": "DELETE /api/v1/stores/{storeId}/checklist-items/{itemId}/check",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/checklist-items/{{checklistItemId}}/check?",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "checklist-items",
+                "{{checklistItemId}}",
+                "check"
+              ],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "{{date}}",
+                  "disabled": true,
+                  "description": "선택"
+                }
+              ]
+            },
+            "description": "체크리스트 항목 등록 (OWNER/MANAGER). */\n    @PostMapping(\"/api/v1/stores/{storeId}/checklist-items\")\n    public ResponseEntity<ApiResponse<ChecklistItemResponse>> addItem(@PathVariable Long storeId,\n            @CurrentUserId Long userId, @Valid @RequestBody ChecklistItemRequest request) {\n        return ResponseEntity.status(HttpStatus.CREATED)\n                .body(ApiResponse.success(checklistService.addItem(storeId, userId, request)));\n    }\n\n    /** 체크리스트 항목 일괄 등록 (OWNER/MANAGER).      * <p>배열 순서대로 순번이 매겨지며, 하나라도 실패하면 전부 등록되지 않는다. 업종 프리셋을 넣는 온보딩처럼 여러 항목을 한꺼번에 넣을 때 쓴다. /\n    @PostMapping(\"/api/v1/stores/{storeId}/checklist-items/bulk\")\n    public ResponseEntity<ApiResponse<List<ChecklistItemResponse>>> addItems(@PathVariable Long storeId,\n            @CurrentUserId Long userId, @Valid @RequestBody ChecklistItemBulkRequest request) {\n        return ResponseEntity.status(HttpStatus.CREATED)\n                .body(ApiResponse.success(checklistService.addItems(storeId, userId, request)));\n    }\n\n    /** 항목 마스터 목록 — 멤버 누구나. */\n    @GetMapping(\"/api/v1/stores/{storeId}/checklist-items\")\n    public ApiResponse<List<ChecklistItemResponse>> getItems(@PathVariable Long storeId,\n            @CurrentUserId Long userId) {\n        return ApiResponse.success(checklistService.getItems(storeId, userId));\n    }\n\n    @PatchMapping(\"/api/v1/stores/{storeId}/checklist-items/{itemId}\")\n    public ApiResponse<ChecklistItemResponse> updateItem(@PathVariable Long storeId,\n            @PathVariable Long itemId, @CurrentUserId Long userId,\n            @Valid @RequestBody ChecklistItemRequest request) {\n        return ApiResponse.success(checklistService.updateItem(storeId, itemId, userId, request));\n    }\n\n    @DeleteMapping(\"/api/v1/stores/{storeId}/checklist-items/{itemId}\")\n    public ApiResponse<Void> deleteItem(@PathVariable Long storeId, @PathVariable Long itemId,\n            @CurrentUserId Long userId) {\n        checklistService.deleteItem(storeId, itemId, userId);\n        return ApiResponse.ok();\n    }\n\n    /** 특정 날짜(기본 오늘)의 체크 현황 — 멤버 누구나. */\n    @GetMapping(\"/api/v1/stores/{storeId}/checklist\")\n    public ApiResponse<List<DailyChecklistEntry>> getDailyChecklist(@PathVariable Long storeId,\n            @CurrentUserId Long userId,\n            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {\n        return ApiResponse.success(checklistService.getDailyChecklist(storeId, userId,\n                date == null ? LocalDate.now() : date));\n    }\n\n    /** 항목 체크 (기본 오늘, 멱등) — 멤버 누구나. */\n    @PostMapping(\"/api/v1/stores/{storeId}/checklist-items/{itemId}/check\")\n    public ApiResponse<Void> check(@PathVariable Long storeId, @PathVariable Long itemId,\n            @CurrentUserId Long userId,\n            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {\n        checklistService.check(storeId, itemId, userId, date == null ? LocalDate.now() : date);\n        return ApiResponse.ok();\n    }\n\n    /** 체크 해제."
+          }
+        }
+      ]
+    },
+    {
+      "name": "16 공지",
+      "item": [
+        {
+          "name": "POST /api/v1/stores/{storeId}/notices",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/notices",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "notices"
+              ],
+              "query": []
+            },
+            "description": "공지 작성 (OWNER/MANAGER).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"이번 주 공지\",\n  \"content\": \"내용을 입력하세요\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const created = pm.response.json().data;",
+                  "if (created && created.id) pm.collectionVariables.set('noticeId', created.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/stores/{storeId}/notices",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/notices",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "notices"
+              ],
+              "query": []
+            },
+            "description": "공지 작성 (OWNER/MANAGER). */\n    @PostMapping\n    public ResponseEntity<ApiResponse<NoticeResponse>> createNotice(@PathVariable Long storeId,\n            @CurrentUserId Long userId, @Valid @RequestBody CreateNoticeRequest request) {\n        return ResponseEntity.status(HttpStatus.CREATED)\n                .body(ApiResponse.success(noticeService.createNotice(storeId, userId, request)));\n    }\n\n    /** 공지 목록 (내 확인 여부 + 확인한 인원수 포함) — 멤버 누구나."
+          }
+        },
+        {
+          "name": "POST /api/v1/stores/{storeId}/notices/{noticeId}/read",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/notices/{{noticeId}}/read",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "notices",
+                "{{noticeId}}",
+                "read"
+              ],
+              "query": []
+            },
+            "description": "공지 작성 (OWNER/MANAGER). */\n    @PostMapping\n    public ResponseEntity<ApiResponse<NoticeResponse>> createNotice(@PathVariable Long storeId,\n            @CurrentUserId Long userId, @Valid @RequestBody CreateNoticeRequest request) {\n        return ResponseEntity.status(HttpStatus.CREATED)\n                .body(ApiResponse.success(noticeService.createNotice(storeId, userId, request)));\n    }\n\n    /** 공지 목록 (내 확인 여부 + 확인한 인원수 포함) — 멤버 누구나. */\n    @GetMapping\n    public ApiResponse<List<NoticeResponse>> getNotices(@PathVariable Long storeId,\n            @CurrentUserId Long userId) {\n        return ApiResponse.success(noticeService.getNotices(storeId, userId));\n    }\n\n    /** \"확인했습니다\" 버튼 — 멤버 누구나, 멱등."
+          }
+        },
+        {
+          "name": "GET /api/v1/stores/{storeId}/notices/{noticeId}/reads",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/notices/{{noticeId}}/reads",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "notices",
+                "{{noticeId}}",
+                "reads"
+              ],
+              "query": []
+            },
+            "description": "공지 작성 (OWNER/MANAGER). */\n    @PostMapping\n    public ResponseEntity<ApiResponse<NoticeResponse>> createNotice(@PathVariable Long storeId,\n            @CurrentUserId Long userId, @Valid @RequestBody CreateNoticeRequest request) {\n        return ResponseEntity.status(HttpStatus.CREATED)\n                .body(ApiResponse.success(noticeService.createNotice(storeId, userId, request)));\n    }\n\n    /** 공지 목록 (내 확인 여부 + 확인한 인원수 포함) — 멤버 누구나. */\n    @GetMapping\n    public ApiResponse<List<NoticeResponse>> getNotices(@PathVariable Long storeId,\n            @CurrentUserId Long userId) {\n        return ApiResponse.success(noticeService.getNotices(storeId, userId));\n    }\n\n    /** \"확인했습니다\" 버튼 — 멤버 누구나, 멱등. */\n    @PostMapping(\"/{noticeId}/read\")\n    public ApiResponse<Void> markRead(@PathVariable Long storeId, @PathVariable Long noticeId,\n            @CurrentUserId Long userId) {\n        noticeService.markRead(storeId, noticeId, userId);\n        return ApiResponse.ok();\n    }\n\n    /** 멤버별 확인 현황 (안 읽은 사람 확인용) — OWNER/MANAGER."
+          }
+        },
+        {
+          "name": "DELETE /api/v1/stores/{storeId}/notices/{noticeId}",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/notices/{{noticeId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "notices",
+                "{{noticeId}}"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "17 인수인계",
+      "item": [
+        {
+          "name": "POST /api/v1/stores/{storeId}/handover-notes",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/handover-notes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "handover-notes"
+              ],
+              "query": []
+            },
+            "description": "인수인계 작성 — 멤버 누구나.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"우유 2팩 남음, 6시 예약 있음\",\n  \"workDate\": \"{{date}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const created = pm.response.json().data;",
+                  "if (created && created.id) pm.collectionVariables.set('noteId', created.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/stores/{storeId}/handover-notes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/handover-notes?from={{from}}&to={{to}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "handover-notes"
+              ],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "{{from}}",
+                  "disabled": false,
+                  "description": "필수"
+                },
+                {
+                  "key": "to",
+                  "value": "{{to}}",
+                  "disabled": false,
+                  "description": "필수"
+                }
+              ]
+            },
+            "description": "인수인계 작성 — 멤버 누구나. */\n    @PostMapping\n    public ResponseEntity<ApiResponse<HandoverNoteResponse>> createNote(@PathVariable Long storeId,\n            @CurrentUserId Long userId, @Valid @RequestBody CreateHandoverNoteRequest request) {\n        return ResponseEntity.status(HttpStatus.CREATED)\n                .body(ApiResponse.success(handoverNoteService.createNote(storeId, userId, request)));\n    }\n\n    /** 기간별 조회 (최신순) — 멤버 누구나."
+          }
+        },
+        {
+          "name": "PATCH /api/v1/stores/{storeId}/handover-notes/{noteId}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/handover-notes/{{noteId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "handover-notes",
+                "{{noteId}}"
+              ],
+              "query": []
+            },
+            "description": "인수인계 작성 — 멤버 누구나. */\n    @PostMapping\n    public ResponseEntity<ApiResponse<HandoverNoteResponse>> createNote(@PathVariable Long storeId,\n            @CurrentUserId Long userId, @Valid @RequestBody CreateHandoverNoteRequest request) {\n        return ResponseEntity.status(HttpStatus.CREATED)\n                .body(ApiResponse.success(handoverNoteService.createNote(storeId, userId, request)));\n    }\n\n    /** 기간별 조회 (최신순) — 멤버 누구나. */\n    @GetMapping\n    public ApiResponse<List<HandoverNoteResponse>> getNotes(@PathVariable Long storeId,\n            @CurrentUserId Long userId,\n            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,\n            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {\n        return ApiResponse.success(handoverNoteService.getNotes(storeId, userId, from, to));\n    }\n\n    /** 수정 — 작성자 본인 또는 관리자. workDate를 생략하면 원래 날짜를 유지한다.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"우유 2팩 남음, 6시 예약 있음\",\n  \"workDate\": \"{{date}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE /api/v1/stores/{storeId}/handover-notes/{noteId}",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/handover-notes/{{noteId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "handover-notes",
+                "{{noteId}}"
+              ],
+              "query": []
+            },
+            "description": "인수인계 작성 — 멤버 누구나. */\n    @PostMapping\n    public ResponseEntity<ApiResponse<HandoverNoteResponse>> createNote(@PathVariable Long storeId,\n            @CurrentUserId Long userId, @Valid @RequestBody CreateHandoverNoteRequest request) {\n        return ResponseEntity.status(HttpStatus.CREATED)\n                .body(ApiResponse.success(handoverNoteService.createNote(storeId, userId, request)));\n    }\n\n    /** 기간별 조회 (최신순) — 멤버 누구나. */\n    @GetMapping\n    public ApiResponse<List<HandoverNoteResponse>> getNotes(@PathVariable Long storeId,\n            @CurrentUserId Long userId,\n            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,\n            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {\n        return ApiResponse.success(handoverNoteService.getNotes(storeId, userId, from, to));\n    }\n\n    /** 수정 — 작성자 본인 또는 관리자. workDate를 생략하면 원래 날짜를 유지한다. */\n    @PatchMapping(\"/{noteId}\")\n    public ApiResponse<HandoverNoteResponse> updateNote(@PathVariable Long storeId,\n            @PathVariable Long noteId, @CurrentUserId Long userId,\n            @Valid @RequestBody CreateHandoverNoteRequest request) {\n        return ApiResponse.success(handoverNoteService.updateNote(storeId, noteId, userId, request));\n    }\n\n    /** 삭제 — 작성자 본인 또는 관리자."
+          }
+        }
+      ]
+    },
+    {
+      "name": "18 매뉴얼",
+      "item": [
+        {
+          "name": "POST /api/v1/stores/{storeId}/manuals",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/manuals",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "manuals"
+              ],
+              "query": []
+            },
+            "description": "매뉴얼 작성 (OWNER/MANAGER).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"기본\",\n  \"title\": \"에스프레소 추출법\",\n  \"content\": \"내용을 입력하세요\",\n  \"displayOrder\": 0,\n  \"imageKeys\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const created = pm.response.json().data;",
+                  "if (created && created.id) pm.collectionVariables.set('manualId', created.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/stores/{storeId}/manuals",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/manuals",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "manuals"
+              ],
+              "query": []
+            },
+            "description": "매뉴얼 작성 (OWNER/MANAGER). */\n    @PostMapping\n    public ResponseEntity<ApiResponse<ManualResponse>> createManual(@PathVariable Long storeId,\n            @CurrentUserId Long userId, @Valid @RequestBody ManualRequest request) {\n        return ResponseEntity.status(HttpStatus.CREATED)\n                .body(ApiResponse.success(manualService.createManual(storeId, userId, request)));\n    }\n\n    /** 매뉴얼 목록 (카테고리·순서 정렬, 본문 제외) — 멤버 누구나."
+          }
+        },
+        {
+          "name": "GET /api/v1/stores/{storeId}/manuals/{manualId}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/manuals/{{manualId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "manuals",
+                "{{manualId}}"
+              ],
+              "query": []
+            },
+            "description": "매뉴얼 작성 (OWNER/MANAGER). */\n    @PostMapping\n    public ResponseEntity<ApiResponse<ManualResponse>> createManual(@PathVariable Long storeId,\n            @CurrentUserId Long userId, @Valid @RequestBody ManualRequest request) {\n        return ResponseEntity.status(HttpStatus.CREATED)\n                .body(ApiResponse.success(manualService.createManual(storeId, userId, request)));\n    }\n\n    /** 매뉴얼 목록 (카테고리·순서 정렬, 본문 제외) — 멤버 누구나. */\n    @GetMapping\n    public ApiResponse<List<ManualSummaryResponse>> getManuals(@PathVariable Long storeId,\n            @CurrentUserId Long userId) {\n        return ApiResponse.success(manualService.getManuals(storeId, userId));\n    }\n\n    /** 매뉴얼 상세 (본문 + 이미지) — 멤버 누구나."
+          }
+        },
+        {
+          "name": "PATCH /api/v1/stores/{storeId}/manuals/{manualId}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/manuals/{{manualId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "manuals",
+                "{{manualId}}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"기본\",\n  \"title\": \"에스프레소 추출법\",\n  \"content\": \"내용을 입력하세요\",\n  \"displayOrder\": 0,\n  \"imageKeys\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE /api/v1/stores/{storeId}/manuals/{manualId}",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/manuals/{{manualId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "manuals",
+                "{{manualId}}"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "POST /api/v1/stores/{storeId}/manuals/images",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/manuals/images",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "manuals",
+                "images"
+              ],
+              "query": []
+            },
+            "description": "매뉴얼 작성 (OWNER/MANAGER). */\n    @PostMapping\n    public ResponseEntity<ApiResponse<ManualResponse>> createManual(@PathVariable Long storeId,\n            @CurrentUserId Long userId, @Valid @RequestBody ManualRequest request) {\n        return ResponseEntity.status(HttpStatus.CREATED)\n                .body(ApiResponse.success(manualService.createManual(storeId, userId, request)));\n    }\n\n    /** 매뉴얼 목록 (카테고리·순서 정렬, 본문 제외) — 멤버 누구나. */\n    @GetMapping\n    public ApiResponse<List<ManualSummaryResponse>> getManuals(@PathVariable Long storeId,\n            @CurrentUserId Long userId) {\n        return ApiResponse.success(manualService.getManuals(storeId, userId));\n    }\n\n    /** 매뉴얼 상세 (본문 + 이미지) — 멤버 누구나. */\n    @GetMapping(\"/{manualId}\")\n    public ApiResponse<ManualResponse> getManual(@PathVariable Long storeId, @PathVariable Long manualId,\n            @CurrentUserId Long userId) {\n        return ApiResponse.success(manualService.getManual(storeId, manualId, userId));\n    }\n\n    @PatchMapping(\"/{manualId}\")\n    public ApiResponse<ManualResponse> updateManual(@PathVariable Long storeId, @PathVariable Long manualId,\n            @CurrentUserId Long userId, @Valid @RequestBody ManualRequest request) {\n        return ApiResponse.success(manualService.updateManual(storeId, manualId, userId, request));\n    }\n\n    @DeleteMapping(\"/{manualId}\")\n    public ApiResponse<Void> deleteManual(@PathVariable Long storeId, @PathVariable Long manualId,\n            @CurrentUserId Long userId) {\n        manualService.deleteManual(storeId, manualId, userId);\n        return ApiResponse.ok();\n    }\n\n    /** 매뉴얼용 이미지 업로드 → key와 표시용 url 반환. key를 저장 요청의 imageKeys에 담는다.",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "19 거래처·발주",
+      "item": [
+        {
+          "name": "POST /api/v1/stores/{storeId}/suppliers",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/suppliers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "suppliers"
+              ],
+              "query": []
+            },
+            "description": "거래처 등록 (OWNER/MANAGER).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"서울우유 대리점\",\n  \"category\": \"기본\",\n  \"siteUrl\": \"https://example.com\",\n  \"phone\": \"010-1234-5678\",\n  \"memo\": \"메모\",\n  \"displayOrder\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const created = pm.response.json().data;",
+                  "if (created && created.id) pm.collectionVariables.set('supplierId', created.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/stores/{storeId}/suppliers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/suppliers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "suppliers"
+              ],
+              "query": []
+            },
+            "description": "거래처 등록 (OWNER/MANAGER). */\n    @PostMapping\n    public ResponseEntity<ApiResponse<SupplierResponse>> createSupplier(@PathVariable Long storeId,\n            @CurrentUserId Long userId, @Valid @RequestBody SupplierRequest request) {\n        return ResponseEntity.status(HttpStatus.CREATED)\n                .body(ApiResponse.success(supplierService.createSupplier(storeId, userId, request)));\n    }\n\n    /** 거래처 목록 (카테고리별 정렬) — OWNER/MANAGER 전용."
+          }
+        },
+        {
+          "name": "PATCH /api/v1/stores/{storeId}/suppliers/{supplierId}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/suppliers/{{supplierId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "suppliers",
+                "{{supplierId}}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"서울우유 대리점\",\n  \"category\": \"기본\",\n  \"siteUrl\": \"https://example.com\",\n  \"phone\": \"010-1234-5678\",\n  \"memo\": \"메모\",\n  \"displayOrder\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE /api/v1/stores/{storeId}/suppliers/{supplierId}",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/suppliers/{{supplierId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "suppliers",
+                "{{supplierId}}"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "POST /api/v1/stores/{storeId}/suppliers/{supplierId}/items",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/suppliers/{{supplierId}}/items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "suppliers",
+                "{{supplierId}}",
+                "items"
+              ],
+              "query": []
+            },
+            "description": "거래처 등록 (OWNER/MANAGER). */\n    @PostMapping\n    public ResponseEntity<ApiResponse<SupplierResponse>> createSupplier(@PathVariable Long storeId,\n            @CurrentUserId Long userId, @Valid @RequestBody SupplierRequest request) {\n        return ResponseEntity.status(HttpStatus.CREATED)\n                .body(ApiResponse.success(supplierService.createSupplier(storeId, userId, request)));\n    }\n\n    /** 거래처 목록 (카테고리별 정렬) — OWNER/MANAGER 전용. */\n    @GetMapping\n    public ApiResponse<List<SupplierResponse>> getSuppliers(@PathVariable Long storeId,\n            @CurrentUserId Long userId) {\n        return ApiResponse.success(supplierService.getSuppliers(storeId, userId));\n    }\n\n    @PatchMapping(\"/{supplierId}\")\n    public ApiResponse<SupplierResponse> updateSupplier(@PathVariable Long storeId,\n            @PathVariable Long supplierId, @CurrentUserId Long userId,\n            @Valid @RequestBody SupplierRequest request) {\n        return ApiResponse.success(supplierService.updateSupplier(storeId, supplierId, userId, request));\n    }\n\n    @DeleteMapping(\"/{supplierId}\")\n    public ApiResponse<Void> deleteSupplier(@PathVariable Long storeId, @PathVariable Long supplierId,\n            @CurrentUserId Long userId) {\n        supplierService.deleteSupplier(storeId, supplierId, userId);\n        return ApiResponse.ok();\n    }\n\n    /** 발주 품목 등록 (OWNER/MANAGER). 요일별 발주량은 자유 텍스트.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"우유\",\n  \"spec\": \"1L x 12개입\",\n  \"memo\": \"메모\",\n  \"displayOrder\": 0,\n  \"weeklyQuantities\": {\n    \"MONDAY\": \"10개\",\n    \"THURSDAY\": \"2박스\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const created = pm.response.json().data;",
+                  "if (created && created.id) pm.collectionVariables.set('supplierItemId', created.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PATCH /api/v1/stores/{storeId}/suppliers/items/{itemId}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/suppliers/items/{{supplierItemId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "suppliers",
+                "items",
+                "{{supplierItemId}}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"우유\",\n  \"spec\": \"1L x 12개입\",\n  \"memo\": \"메모\",\n  \"displayOrder\": 0,\n  \"weeklyQuantities\": {\n    \"MONDAY\": \"10개\",\n    \"THURSDAY\": \"2박스\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE /api/v1/stores/{storeId}/suppliers/items/{itemId}",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/suppliers/items/{{supplierItemId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "suppliers",
+                "items",
+                "{{supplierItemId}}"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "20 원가 (재료·메뉴)",
+      "item": [
+        {
+          "name": "POST /api/v1/stores/{storeId}/menu-ingredients",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/menu-ingredients",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "menu-ingredients"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"우유\",\n  \"productInfo\": \"서울우유 1L\",\n  \"price\": 2800,\n  \"packageQty\": 1000,\n  \"unit\": \"ML\",\n  \"lossRate\": 5,\n  \"category\": \"기본\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const created = pm.response.json().data;",
+                  "if (created && created.id) pm.collectionVariables.set('ingredientId', created.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/stores/{storeId}/menu-ingredients",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/menu-ingredients",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "menu-ingredients"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "PATCH /api/v1/stores/{storeId}/menu-ingredients/{ingredientId}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/menu-ingredients/{{ingredientId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "menu-ingredients",
+                "{{ingredientId}}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"우유\",\n  \"productInfo\": \"서울우유 1L\",\n  \"price\": 2800,\n  \"packageQty\": 1000,\n  \"unit\": \"ML\",\n  \"lossRate\": 5,\n  \"category\": \"기본\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE /api/v1/stores/{storeId}/menu-ingredients/{ingredientId}",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/menu-ingredients/{{ingredientId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "menu-ingredients",
+                "{{ingredientId}}"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "POST /api/v1/stores/{storeId}/menus",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/menus",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "menus"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"카페라떼\",\n  \"sellingPrice\": 4500,\n  \"category\": \"기본\",\n  \"recipe\": [\n    {\n      \"ingredientId\": {{ingredientId}},\n      \"amount\": 200\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const created = pm.response.json().data;",
+                  "if (created && created.id) pm.collectionVariables.set('menuId', created.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/stores/{storeId}/menus",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/menus",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "menus"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "GET /api/v1/stores/{storeId}/menus/{menuId}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/menus/{{menuId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "menus",
+                "{{menuId}}"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "PATCH /api/v1/stores/{storeId}/menus/{menuId}",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/menus/{{menuId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "menus",
+                "{{menuId}}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"카페라떼\",\n  \"sellingPrice\": 4500,\n  \"category\": \"기본\",\n  \"recipe\": [\n    {\n      \"ingredientId\": {{ingredientId}},\n      \"amount\": 200\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE /api/v1/stores/{storeId}/menus/{menuId}",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/stores/{{storeId}}/menus/{{menuId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "stores",
+                "{{storeId}}",
+                "menus",
+                "{{menuId}}"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "21 AI 근로 상담",
+      "item": [
+        {
+          "name": "POST /api/v1/labor-qa/ask",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/labor-qa/ask",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "labor-qa",
+                "ask"
+              ],
+              "query": []
+            },
+            "description": "근로기준법·세무 상담. 매장과 무관하게 로그인한 사용자라면 누구나 쓸 수 있다. 경로와 응답은 기존과 같다. */\n@RestController\n@RequestMapping(\"/api/v1/labor-qa\")\n@RequiredArgsConstructor\npublic class LaborQaController {\n\n    private final LaborQaService laborQaService;\n    private final LaborQaSessionService sessionService;\n\n    /** 단발 질문 (대화 이력 없음).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question\": \"주휴수당은 언제 받을 수 있나요?\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST /api/v1/labor-qa/sessions",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/labor-qa/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "labor-qa",
+                "sessions"
+              ],
+              "query": []
+            },
+            "description": "근로기준법·세무 상담. 매장과 무관하게 로그인한 사용자라면 누구나 쓸 수 있다. 경로와 응답은 기존과 같다. */\n@RestController\n@RequestMapping(\"/api/v1/labor-qa\")\n@RequiredArgsConstructor\npublic class LaborQaController {\n\n    private final LaborQaService laborQaService;\n    private final LaborQaSessionService sessionService;\n\n    /** 단발 질문 (대화 이력 없음). */\n    @RateLimit(limit = 10, windowMinutes = 1)\n    @PostMapping(\"/ask\")\n    public ApiResponse<LaborQaAnswer> ask(@Valid @RequestBody LaborQaRequest request) {\n        return ApiResponse.success(laborQaService.ask(request.question()));\n    }\n\n    /** 대화 세션 생성. 이후 이 세션 안에서 후속 질문이 맥락을 유지한다."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const created = pm.response.json().data;",
+                  "if (created && created.id) pm.collectionVariables.set('sessionId', created.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /api/v1/labor-qa/sessions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/labor-qa/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "labor-qa",
+                "sessions"
+              ],
+              "query": []
+            },
+            "description": "근로기준법·세무 상담. 매장과 무관하게 로그인한 사용자라면 누구나 쓸 수 있다. 경로와 응답은 기존과 같다. */\n@RestController\n@RequestMapping(\"/api/v1/labor-qa\")\n@RequiredArgsConstructor\npublic class LaborQaController {\n\n    private final LaborQaService laborQaService;\n    private final LaborQaSessionService sessionService;\n\n    /** 단발 질문 (대화 이력 없음). */\n    @RateLimit(limit = 10, windowMinutes = 1)\n    @PostMapping(\"/ask\")\n    public ApiResponse<LaborQaAnswer> ask(@Valid @RequestBody LaborQaRequest request) {\n        return ApiResponse.success(laborQaService.ask(request.question()));\n    }\n\n    /** 대화 세션 생성. 이후 이 세션 안에서 후속 질문이 맥락을 유지한다. */\n    @PostMapping(\"/sessions\")\n    public ResponseEntity<ApiResponse<LaborQaSessionResponse>> createSession(@CurrentUserId Long userId) {\n        return ResponseEntity.status(HttpStatus.CREATED)\n                .body(ApiResponse.success(LaborQaSessionResponse.from(sessionService.createSession(userId))));\n    }\n\n    /** 내 대화 목록 (최신순)."
+          }
+        },
+        {
+          "name": "GET /api/v1/labor-qa/sessions/{sessionId}",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/labor-qa/sessions/{{sessionId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "labor-qa",
+                "sessions",
+                "{{sessionId}}"
+              ],
+              "query": []
+            },
+            "description": "근로기준법·세무 상담. 매장과 무관하게 로그인한 사용자라면 누구나 쓸 수 있다. 경로와 응답은 기존과 같다. */\n@RestController\n@RequestMapping(\"/api/v1/labor-qa\")\n@RequiredArgsConstructor\npublic class LaborQaController {\n\n    private final LaborQaService laborQaService;\n    private final LaborQaSessionService sessionService;\n\n    /** 단발 질문 (대화 이력 없음). */\n    @RateLimit(limit = 10, windowMinutes = 1)\n    @PostMapping(\"/ask\")\n    public ApiResponse<LaborQaAnswer> ask(@Valid @RequestBody LaborQaRequest request) {\n        return ApiResponse.success(laborQaService.ask(request.question()));\n    }\n\n    /** 대화 세션 생성. 이후 이 세션 안에서 후속 질문이 맥락을 유지한다. */\n    @PostMapping(\"/sessions\")\n    public ResponseEntity<ApiResponse<LaborQaSessionResponse>> createSession(@CurrentUserId Long userId) {\n        return ResponseEntity.status(HttpStatus.CREATED)\n                .body(ApiResponse.success(LaborQaSessionResponse.from(sessionService.createSession(userId))));\n    }\n\n    /** 내 대화 목록 (최신순). */\n    @GetMapping(\"/sessions\")\n    public ApiResponse<List<LaborQaSessionResponse>> getMySessions(@CurrentUserId Long userId) {\n        return ApiResponse.success(sessionService.getSessionsOf(userId).stream()\n                .map(LaborQaSessionResponse::from)\n                .toList());\n    }\n\n    /** 대화 상세 (전체 메시지 이력). 본인 세션만 조회할 수 있다."
+          }
+        },
+        {
+          "name": "POST /api/v1/labor-qa/sessions/{sessionId}/ask",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/labor-qa/sessions/{{sessionId}}/ask",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "labor-qa",
+                "sessions",
+                "{{sessionId}}",
+                "ask"
+              ],
+              "query": []
+            },
+            "description": "근로기준법·세무 상담. 매장과 무관하게 로그인한 사용자라면 누구나 쓸 수 있다. 경로와 응답은 기존과 같다. */\n@RestController\n@RequestMapping(\"/api/v1/labor-qa\")\n@RequiredArgsConstructor\npublic class LaborQaController {\n\n    private final LaborQaService laborQaService;\n    private final LaborQaSessionService sessionService;\n\n    /** 단발 질문 (대화 이력 없음). */\n    @RateLimit(limit = 10, windowMinutes = 1)\n    @PostMapping(\"/ask\")\n    public ApiResponse<LaborQaAnswer> ask(@Valid @RequestBody LaborQaRequest request) {\n        return ApiResponse.success(laborQaService.ask(request.question()));\n    }\n\n    /** 대화 세션 생성. 이후 이 세션 안에서 후속 질문이 맥락을 유지한다. */\n    @PostMapping(\"/sessions\")\n    public ResponseEntity<ApiResponse<LaborQaSessionResponse>> createSession(@CurrentUserId Long userId) {\n        return ResponseEntity.status(HttpStatus.CREATED)\n                .body(ApiResponse.success(LaborQaSessionResponse.from(sessionService.createSession(userId))));\n    }\n\n    /** 내 대화 목록 (최신순). */\n    @GetMapping(\"/sessions\")\n    public ApiResponse<List<LaborQaSessionResponse>> getMySessions(@CurrentUserId Long userId) {\n        return ApiResponse.success(sessionService.getSessionsOf(userId).stream()\n                .map(LaborQaSessionResponse::from)\n                .toList());\n    }\n\n    /** 대화 상세 (전체 메시지 이력). 본인 세션만 조회할 수 있다. */\n    @GetMapping(\"/sessions/{sessionId}\")\n    public ApiResponse<LaborQaSessionDetailResponse> getSession(@PathVariable Long sessionId,\n            @CurrentUserId Long userId) {\n        LaborQaSession session = sessionService.requireOwnedSession(sessionId, userId);\n        return ApiResponse.success(LaborQaSessionDetailResponse.from(session,\n                sessionService.getMessages(sessionId, userId)));\n    }\n\n    /** 세션 안에서 질문. 직전 대화가 프롬프트에 포함되고, 질문·답변이 이력으로 저장된다.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question\": \"주휴수당은 언제 받을 수 있나요?\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE /api/v1/labor-qa/sessions/{sessionId}",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/labor-qa/sessions/{{sessionId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "labor-qa",
+                "sessions",
+                "{{sessionId}}"
+              ],
+              "query": []
+            },
+            "description": "근로기준법·세무 상담. 매장과 무관하게 로그인한 사용자라면 누구나 쓸 수 있다. 경로와 응답은 기존과 같다. */\n@RestController\n@RequestMapping(\"/api/v1/labor-qa\")\n@RequiredArgsConstructor\npublic class LaborQaController {\n\n    private final LaborQaService laborQaService;\n    private final LaborQaSessionService sessionService;\n\n    /** 단발 질문 (대화 이력 없음). */\n    @RateLimit(limit = 10, windowMinutes = 1)\n    @PostMapping(\"/ask\")\n    public ApiResponse<LaborQaAnswer> ask(@Valid @RequestBody LaborQaRequest request) {\n        return ApiResponse.success(laborQaService.ask(request.question()));\n    }\n\n    /** 대화 세션 생성. 이후 이 세션 안에서 후속 질문이 맥락을 유지한다. */\n    @PostMapping(\"/sessions\")\n    public ResponseEntity<ApiResponse<LaborQaSessionResponse>> createSession(@CurrentUserId Long userId) {\n        return ResponseEntity.status(HttpStatus.CREATED)\n                .body(ApiResponse.success(LaborQaSessionResponse.from(sessionService.createSession(userId))));\n    }\n\n    /** 내 대화 목록 (최신순). */\n    @GetMapping(\"/sessions\")\n    public ApiResponse<List<LaborQaSessionResponse>> getMySessions(@CurrentUserId Long userId) {\n        return ApiResponse.success(sessionService.getSessionsOf(userId).stream()\n                .map(LaborQaSessionResponse::from)\n                .toList());\n    }\n\n    /** 대화 상세 (전체 메시지 이력). 본인 세션만 조회할 수 있다. */\n    @GetMapping(\"/sessions/{sessionId}\")\n    public ApiResponse<LaborQaSessionDetailResponse> getSession(@PathVariable Long sessionId,\n            @CurrentUserId Long userId) {\n        LaborQaSession session = sessionService.requireOwnedSession(sessionId, userId);\n        return ApiResponse.success(LaborQaSessionDetailResponse.from(session,\n                sessionService.getMessages(sessionId, userId)));\n    }\n\n    /** 세션 안에서 질문. 직전 대화가 프롬프트에 포함되고, 질문·답변이 이력으로 저장된다. */\n    @RateLimit(limit = 10, windowMinutes = 1)\n    @PostMapping(\"/sessions/{sessionId}/ask\")\n    public ApiResponse<LaborQaAnswer> askInSession(@PathVariable Long sessionId,\n            @CurrentUserId Long userId, @Valid @RequestBody LaborQaRequest request) {\n        return ApiResponse.success(laborQaService.askInSession(sessionId, userId, request.question()));\n    }\n\n    /** 대화 삭제 (메시지 포함)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "22 지식베이스 (관리자)",
+      "item": [
+        {
+          "name": "POST /api/v1/labor-qa/admin/ingest",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Admin-Token",
+                "value": "{{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/labor-qa/admin/ingest",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "labor-qa",
+                "admin",
+                "ingest"
+              ],
+              "query": []
+            },
+            "description": "근로기준법 Q&A 지식베이스 운영용 API.  * <p>지식베이스는 매장이 아니라 서비스 전체가 공유하는 자원이라 매장 역할(OWNER/MANAGER)로는 보호할 수 없다. 전역 관리자 역할을 새로 만드는 대신 운영자만 아는 토큰을 요구한다. 토큰을 설정하지 않으면 이 엔드포인트는 아예 열리지 않는다(운영 환경에서 실수로 무방비 노출되는 것을 막기 위함). /\n@RestController\n@RequestMapping(\"/api/v1/labor-qa/admin\")\n@RequiredArgsConstructor\npublic class LaborQaAdminController {\n\n    private final LaborQaIngestionService ingestionService;\n\n    private final LaborQaProperties properties;\n\n    /** 지식베이스를 벡터 저장소에 적재한다. 문서를 수정·추가한 뒤 호출한다. 청크 ID가 내용 해시로 고정돼 있어 여러 번 호출해도 중복이 쌓이지 않는다.\n",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

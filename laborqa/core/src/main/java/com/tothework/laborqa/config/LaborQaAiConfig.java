@@ -1,10 +1,13 @@
 package com.tothework.laborqa.config;
 
+import io.micrometer.observation.ObservationRegistry;
 import javax.sql.DataSource;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.embedding.EmbeddingModel;
+import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.pgvector.PgVectorStore;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
@@ -18,6 +21,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 class LaborQaAiConfig {
 
     private static final int EMBEDDING_DIMENSIONS = 1536; // text-embedding-3-small
+    static final int ANSWER_MAX_TOKENS = 800;
 
     /**
      * 지식베이스 적재 API는 매장 역할로 보호할 수 없는 전역 자원이라, 로그인 대신 컨트롤러가 X-Admin-Token을 직접
@@ -28,9 +32,14 @@ class LaborQaAiConfig {
         return PublicEndpoints.of("/api/v1/labor-qa/admin/**");
     }
 
+    /**
+     * 상담용. 답변 생성 시간은 출력 토큰 수에 거의 비례하므로 상한을 따로 둔다. 전역 상한(4096)은 긴 JSON을 내는 스케줄
+     * 초안에 맞춘 값이라 상담 답변에는 사실상 제한이 아니다. 분량은 프롬프트가 정하고(400자 안팎), 이 값은 그걸 어겼을
+     * 때의 안전장치라 문장이 잘리지 않게 넉넉히 둔다.
+     */
     @Bean
     ChatClient laborQaChatClient(ChatClient.Builder chatClientBuilder) {
-        return chatClientBuilder.build();
+        return chatClientBuilder.defaultOptions(OpenAiChatOptions.builder().maxTokens(ANSWER_MAX_TOKENS)).build();
     }
 
     /**
@@ -42,7 +51,8 @@ class LaborQaAiConfig {
      */
     @Bean
     @Lazy
-    VectorStore laborQaVectorStore(EmbeddingModel embeddingModel, LaborQaProperties properties) {
+    VectorStore laborQaVectorStore(EmbeddingModel embeddingModel, LaborQaProperties properties,
+            ObjectProvider<ObservationRegistry> observationRegistry) {
         LaborQaProperties.VectorStore connection = properties.vectorStore();
         DataSource vectorDataSource = DataSourceBuilder.create()
                 .driverClassName("org.postgresql.Driver")
@@ -55,6 +65,8 @@ class LaborQaAiConfig {
                 .initializeSchema(true)
                 // 적재는 관리자 API로만 하므로 재시작할 때 테이블을 지우지 않는다.
                 .removeExistingVectorStoreTable(false)
+                // 직접 만든 저장소라 넘기지 않으면 검색 시간이 지표(db.vector.client.operation)에 남지 않는다.
+                .observationRegistry(observationRegistry.getIfUnique(() -> ObservationRegistry.NOOP))
                 .build();
     }
 }

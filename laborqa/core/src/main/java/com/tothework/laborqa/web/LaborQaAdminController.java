@@ -37,7 +37,7 @@ public class LaborQaAdminController {
     @PostMapping("/ingest")
     public ApiResponse<IngestResultResponse> ingest(@RequestHeader("X-Admin-Token") String token) {
         verifyAdminToken(token);
-        return ApiResponse.success(new IngestResultResponse(ingestionService.ingest()));
+        return ApiResponse.success(IngestResultResponse.from(ingestionService.ingest()));
     }
 
     private void verifyAdminToken(String token) {

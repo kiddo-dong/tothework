@@ -10,7 +10,7 @@ interface LaborQaMessageRepository extends ListCrudRepository<LaborQaMessage, Lo
 
     List<LaborQaMessage> findAllBySessionIdOrderByIdAsc(Long sessionId);
 
-    List<LaborQaMessage> findTop10BySessionIdOrderByIdDesc(Long sessionId);
+    List<LaborQaMessage> findTop6BySessionIdOrderByIdDesc(Long sessionId);
 
     @Modifying
     @Query("DELETE FROM " + LaborQaSchema.NAME + ".labor_qa_messages WHERE session_id = :sessionId")

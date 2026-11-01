@@ -9,13 +9,15 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param topK                근거로 가져올 최대 문서 수
  * @param adminIngestToken    지식베이스 적재 API용 토큰. 비어 있으면 그 API는 열리지 않는다
  * @param vectorStore         근거 문서를 담는 pgvector 접속 정보. 업무 DB(MySQL)와 별개다
+ * @param warmUpOnStartup     기동 직후 백그라운드에서 벡터 저장소에 미리 연결할지. 끄면 첫 질문이 연결 비용을 낸다
  */
 @ConfigurationProperties("tothework.laborqa")
 public record LaborQaProperties(
         double similarityThreshold,
         int topK,
         String adminIngestToken,
-        VectorStore vectorStore) {
+        VectorStore vectorStore,
+        boolean warmUpOnStartup) {
 
     public record VectorStore(String url, String username, String password) {
     }

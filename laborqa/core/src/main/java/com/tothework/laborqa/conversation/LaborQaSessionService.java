@@ -48,10 +48,11 @@ public class LaborQaSessionService {
     }
 
     /**
-     * 프롬프트용 최근 대화, 오래된 것부터. 토큰 비용이 무한히 늘지 않도록 최근 10건(질문+답변 합산)만 쓴다.
+     * 프롬프트용 최근 대화, 오래된 것부터. 후속 질문의 맥락에는 최근 세 번의 문답(질문+답변 6건)이면 충분하다. 더 넣으면
+     * 입력 토큰만큼 첫 글자가 늦게 나오고 비용이 는다.
      */
     public List<LaborQaMessage> loadRecentMessages(Long sessionId) {
-        return messageRepository.findTop10BySessionIdOrderByIdDesc(sessionId).reversed();
+        return messageRepository.findTop6BySessionIdOrderByIdDesc(sessionId).reversed();
     }
 
     /**

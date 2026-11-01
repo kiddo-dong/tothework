@@ -42,11 +42,11 @@ public class LaborQaMessage {
         this.updatedAt = updatedAt;
     }
 
-    static LaborQaMessage question(Long sessionId, String content) {
+    public static LaborQaMessage question(Long sessionId, String content) {
         return new LaborQaMessage(null, sessionId, LaborQaRole.USER, content, null, null, null);
     }
 
-    static LaborQaMessage answer(Long sessionId, String content, List<String> sources) {
+    public static LaborQaMessage answer(Long sessionId, String content, List<String> sources) {
         String joined = sources == null || sources.isEmpty() ? null : String.join(SOURCE_DELIMITER, sources);
         return new LaborQaMessage(null, sessionId, LaborQaRole.ASSISTANT, content, joined, null, null);
     }

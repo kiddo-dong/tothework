@@ -35,7 +35,7 @@ public class LaborQaService {
      * 말투는 부드럽게 하되 이 문구의 힘은 빼지 않는다. 법률 자문이 아니라는 고지는 편하게 읽히더라도
      * 흘려 넘길 문장이 되면 곤란하다.
      */
-    private static final String DISCLAIMER =
+    static final String DISCLAIMER =
             "\n\n※ 이 답변은 법률·세무 자문이 아니에요. 중요한 결정을 앞두고 있다면 노무사·세무사에게 꼭 확인해 주세요.";
 
     private static final String SYSTEM_PROMPT = """
@@ -64,10 +64,14 @@ public class LaborQaService {
             법은 해마다 바뀌고, 틀린 숫자로 급여를 계산하면 그것 자체가 법 위반이 돼요.
             모른다고 말하는 것보다 옛날 숫자를 자신 있게 말하는 쪽이 훨씬 위험해요.
 
+            [답변 길이]
+            질문에 대한 답을 첫 문장에 바로 말해요. 전체는 3~6문장, 400자 안팎으로 짧게 써요.
+            목록은 항목이 여러 개라 꼭 필요할 때만 쓰고, 같은 내용을 다른 말로 반복하지 않아요.
+
             [그 외]
             이전 대화가 함께 제공되면 질문의 맥락(예: "그럼 5인 미만은요?")을 해석하는 데 사용해요.
             개인의 정확한 세액이나 구체적인 법적 판단은 하지 말고 일반적인 기준만 안내해요.
-            근거 문서를 참고했다면 답변 마지막 줄에 그 출처(문서 제목)를 나열해요.
+            출처는 화면에 따로 보여 주므로 답변에 적지 않아요.
             """;
 
     /** 벡터 저장소는 처음 쓰일 때 접속하도록 지연 조회한다 (LaborQaAiConfig 참고). */
@@ -97,7 +101,7 @@ public class LaborQaService {
                 .map(previous -> previous + " " + question)
                 .orElse(question);
 
-        LaborQaAnswer response = answer(retrievalQuery, question, formatHistory(history));
+        LaborQaAnswer response = answer(retrievalQuery, question, PromptHistory.format(history));
         sessionService.recordExchange(sessionId, userId, question, response.answer(), response.sources());
         return response;
     }
@@ -142,17 +146,6 @@ public class LaborQaService {
             }
         }
         return Optional.empty();
-    }
-
-    private String formatHistory(List<LaborQaMessage> history) {
-        if (history.isEmpty()) {
-            return "";
-        }
-        String lines = history.stream()
-                .map(message -> (message.getRole() == LaborQaRole.USER ? "사용자: " : "도우미: ")
-                        + message.getContent())
-                .collect(Collectors.joining("\n"));
-        return "이전 대화:\n" + lines + "\n\n";
     }
 
     /** 마크다운/JSON은 title 메타데이터를, PDF는 파일명+페이지 번호를 출처 표시로 쓴다. */

@@ -96,6 +96,16 @@ management:
   endpoint:
     health:
       show-details: always
+      # 로드밸런서용 헬스체크. 관리 포트는 외부에 못 열므로 readiness 그룹만 앱 포트의 /health로 내보낸다.
+      # DB가 죽었거나 종료 중(graceful shutdown)이면 503이라 LB가 트래픽을 뺀다. 외부에 보이므로 상세는 숨긴다.
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: readinessState,db
+          additional-path: "server:/health"
+          show-components: never
+          show-details: never
 
 springdoc:
   api-docs:

@@ -32,4 +32,12 @@ class UnknownPathTest {
                 .andExpect(jsonPath("$.message").value("요청한 경로를 찾을 수 없습니다."));
         mockMvc.perform(get("/actuator/health")).andExpect(status().isNotFound());
     }
+
+    @Test
+    void loadBalancerHealthCheckIsOpenOnTheAppPortWithoutDetails() throws Exception {
+        mockMvc.perform(get("/health")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("UP"))
+                .andExpect(jsonPath("$.components").doesNotExist())
+                .andExpect(jsonPath("$.details").doesNotExist());
+    }
 }

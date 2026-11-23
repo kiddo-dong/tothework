@@ -58,8 +58,17 @@ spring:
           enabled: false
       # 끝난 발행 기록은 지운다. 미완료만 남아 재전달 대상이 된다.
       completion-mode: delete
-      # 단일 인스턴스 배포라 재시작 때 미완료 이벤트를 다시 보낸다. 여러 대로 늘리면 끄고 다른 방식으로 재전달할 것.
-      republish-outstanding-events-on-restart: true
+      # 재시작할 때 미완료 이벤트를 다시 보내지 않는다. 서버가 여러 대라 다른 서버가 아직 처리 중인 이벤트까지 다시
+      # 보내게 되기 때문이다. 대신 오래 멈춘 이벤트는 아래 staleness가 FAILED로 표시하고, 실패한 이벤트는
+      # FailedEventResubmission이 락을 잡은 한 서버에서만 다시 보낸다.
+      republish-outstanding-events-on-restart: false
+      # 이 시간이 지나도 끝나지 않은 발행 기록은 멈춘 것으로 보고 FAILED로 바꾼다. 리스너는 DB 정리 정도라 몇 초면 끝난다.
+      #   published: 저장됐는데 리스너가 시작조차 안 됨 (발행 직후 서버가 죽은 경우)
+      #   processing: 리스너가 시작했는데 끝나지 않음 (처리 중 서버가 죽은 경우)
+      staleness:
+        published: 10m
+        processing: 30m
+        resubmitted: 10m
 
   # 서버 간 채팅 이벤트 전달(Pub/Sub)에만 쓴다. 저장소로 쓰지 않으므로 Redis가 비어도 잃는 데이터는 없다.
   # 운영(ElastiCache 전송 중 암호화)에서는 REDIS_SSL=true. 응답이 없으면 메시지 전송이 오래 붙잡히지 않게 짧게 끊는다.

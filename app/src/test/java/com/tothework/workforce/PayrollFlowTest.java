@@ -11,6 +11,7 @@ import com.tothework.store.store.StorePurgeJob;
 import com.tothework.support.TestAccounts;
 import com.tothework.support.TestAccounts.Account;
 import com.tothework.support.TestDatabase;
+import com.tothework.support.TestSchedulerLocks;
 import com.tothework.support.TestStores;
 import com.tothework.workforce.attendance.AttendanceService;
 import com.tothework.workforce.attendance.CreateAttendanceRequest;
@@ -176,6 +177,7 @@ class PayrollFlowTest {
 
         jdbcClient.sql("UPDATE tw_store.stores SET deleted_at = NOW() - INTERVAL 91 DAY WHERE id = ?")
                 .param(storeId).update();
+        TestSchedulerLocks.releaseAll(jdbcClient);
         storePurgeJob.purgeExpiredStores();
 
         await().atMost(Duration.ofSeconds(5)).until(() -> payrollRows() == 0 && countOf("attendances") == 0

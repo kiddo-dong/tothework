@@ -15,6 +15,7 @@ import com.tothework.store.store.StorePurgeJob;
 import com.tothework.support.TestAccounts;
 import com.tothework.support.TestAccounts.Account;
 import com.tothework.support.TestDatabase;
+import com.tothework.support.TestSchedulerLocks;
 import com.tothework.support.TestStores;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -246,6 +247,7 @@ class OperationsFlowTest {
 
         jdbcClient.sql("UPDATE tw_store.stores SET deleted_at = NOW() - INTERVAL 91 DAY WHERE id = ?")
                 .param(storeId).update();
+        TestSchedulerLocks.releaseAll(jdbcClient);
         storePurgeJob.purgeExpiredStores();
 
         List<String> tables = List.of("checklist_items", "notices", "handover_notes", "manuals", "suppliers",

@@ -14,6 +14,7 @@ import com.tothework.store.store.StorePurgeJob;
 import com.tothework.support.TestAccounts;
 import com.tothework.support.TestAccounts.Account;
 import com.tothework.support.TestDatabase;
+import com.tothework.support.TestSchedulerLocks;
 import java.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -143,6 +144,7 @@ class StoreLifecycleTest {
         // 유예기간이 지나면 완전히 지우고, 이벤트를 받은 workforce가 고용 조건을 지운다
         jdbcClient.sql("UPDATE tw_store.stores SET deleted_at = NOW() - INTERVAL 91 DAY WHERE id = ?")
                 .param(storeId).update();
+        TestSchedulerLocks.releaseAll(jdbcClient);
         storePurgeJob.purgeExpiredStores();
         assertThat(jdbcClient.sql("SELECT COUNT(*) FROM tw_store.store_members WHERE store_id = ?")
                 .param(storeId).query(Integer.class).single()).isZero();

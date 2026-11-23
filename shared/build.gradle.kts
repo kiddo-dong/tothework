@@ -24,4 +24,8 @@ dependencies {
 
     // 이미지 저장소. 프로필·매장·매뉴얼 사진을 여러 서비스가 올린다.
     api(libs.aws.s3)
+
+    // 서버가 여러 대일 때 예약 작업을 한 대에서만 돌린다(@SchedulerLock). 락은 공유 MySQL에 둔다.
+    api(libs.shedlock.spring)
+    implementation(libs.shedlock.jdbc)
 }

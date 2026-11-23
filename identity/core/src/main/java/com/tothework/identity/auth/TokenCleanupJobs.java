@@ -8,11 +8,15 @@ import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-/** 쌓이기만 하는 인증 데이터를 주기적으로 지운다. 삭제는 여러 번 실행해도 결과가 같아 서버가 여러 대여도 괜찮다. */
+/**
+ * 쌓이기만 하는 인증 데이터를 주기적으로 지운다. 삭제는 여러 번 실행해도 결과는 같지만, 서버가 여러 대일 때 같은 시각에
+ * 같은 행을 두고 다투지 않게 락을 잡은 한 대만 돈다.
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -28,6 +32,7 @@ class TokenCleanupJobs {
      * 행이 쌓이는데 지우는 경로가 로그아웃뿐이라 테이블이 단조 증가하는 것을 막는다. 사용자가 가장 적은 새벽 4시.
      */
     @Scheduled(cron = "0 0 4 * * *")
+    @SchedulerLock(name = "identity.deleteExpiredRefreshTokens", lockAtLeastFor = "PT1M")
     @Transactional
     public void deleteExpiredRefreshTokens() {
         int deleted = refreshTokenRepository.deleteExpiredBefore(LocalDateTime.now());
@@ -43,6 +48,7 @@ class TokenCleanupJobs {
      * 없고, 남는 것은 가입 때 발급한 인증 토큰뿐이다. 리프레시 토큰 정리와 겹치지 않게 4시 30분.
      */
     @Scheduled(cron = "0 30 4 * * *")
+    @SchedulerLock(name = "identity.deleteExpiredUnverifiedAccounts", lockAtLeastFor = "PT1M")
     @Transactional
     public void deleteExpiredUnverifiedAccounts() {
         LocalDateTime threshold = LocalDateTime.now().minusDays(properties.unverifiedRetentionDays());

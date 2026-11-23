@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -26,8 +27,12 @@ public class StorePurgeJob {
     private final StoreRepository storeRepository;
     private final ApplicationEventPublisher eventPublisher;
 
-    /** 매일 새벽 4시 45분. 토큰·계정 정리와 겹치지 않게 시간을 띄운다. */
+    /**
+     * 매일 새벽 4시 45분. 토큰·계정 정리와 겹치지 않게 시간을 띄운다. 서버가 여러 대라 락을 잡은 한 대만 돈다. 두 대가
+     * 함께 돌면 같은 매장의 삭제 이벤트가 두 번 나가 다른 서비스가 정리를 두 번 한다.
+     */
     @Scheduled(cron = "0 45 4 * * *")
+    @SchedulerLock(name = "store.purgeExpiredStores", lockAtLeastFor = "PT1M")
     @Transactional
     public void purgeExpiredStores() {
         List<Long> storeIds = storeRepository.findIdsSoftDeletedBefore(LocalDateTime.now().minusDays(GRACE_PERIOD_DAYS));

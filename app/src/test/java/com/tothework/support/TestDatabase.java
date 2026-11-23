@@ -18,9 +18,15 @@ import org.testcontainers.mysql.MySQLContainer;
 @Profile("!localdb")
 public class TestDatabase {
 
+    /**
+     * root로 접속한다. 서비스마다 Flyway가 자기 스키마({@code tw_*})를 만드는데, 컨테이너의 기본 사용자({@code test})는
+     * 자기 DB 하나에만 권한이 있어 스키마를 만들지 못한다. 운영 DB 사용자에게도 스키마 생성 권한이 필요하다.
+     *
+     * <p>기본 DB는 운영과 같이 {@code tw_shared}다. 이벤트 발행 기록 테이블이 스키마 지정 없이 기본 DB에서 읽힌다.
+     */
     @Bean
     @ServiceConnection
     MySQLContainer mysql() {
-        return new MySQLContainer("mysql:8.4");
+        return new MySQLContainer("mysql:8.4").withDatabaseName("tw_shared").withUsername("root");
     }
 }

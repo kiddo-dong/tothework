@@ -39,4 +39,7 @@ tasks.withType<JavaCompile>().configureEach {
 
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
+    // Redis 클라이언트 밑의 Netty가 네이티브 라이브러리를 불러온다(JNI). JDK 24부터 이걸 허용하지 않으면 경고가 나고,
+    // 이후 버전에서는 막힐 예정이다(JEP 472). classpath의 코드 전체(ALL-UNNAMED)에 허용한다.
+    jvmArgs("--enable-native-access=ALL-UNNAMED")
 }

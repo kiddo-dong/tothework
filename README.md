@@ -237,15 +237,14 @@ AI 엔드포인트에는 호출 제한이 걸려 있다(`shared/ratelimit`). 비
 | **스토리지** | AWS S3 | 프로필·매장·매뉴얼 이미지. key로 저장하고 URL은 조립 |
 | **모니터링** | Amazon CloudWatch | EC2 기본 지표(CPU·네트워크·디스크) + **CloudWatch Agent로 로그 수집** |
 | **프로세스 관리** | systemd | 전용 계정으로 실행, 부팅 시 자동 기동, 시크릿은 `EnvironmentFile` |
-| **리버스 프록시** | nginx | TLS 종료, `127.0.0.1:8080`으로 전달 |
-| **인증서** | Let's Encrypt (certbot) | `--nginx` 플러그인으로 발급·자동 갱신 |
+| **로드밸런서** | AWS ALB | TLS 종료(ACM 인증서), EC2의 `8080`으로 전달, 헬스체크 `/health` |
 | **프론트엔드** | Vercel | [`tothework.com`](https://tothework.com) |
 | **운영 상태** | Spring Boot Actuator | `health`·`info`·`metrics`·`loggers`, **8081 루프백 전용** |
 | **로그** | Logback 파일 롤링 + journalctl | 50MB 단위, 30일 보관, 총 1GB 상한 |
 
 **두 포트를 나눈 이유** — Actuator의 `loggers`는 **로그 레벨을 런타임에 바꾸는 쓰기 엔드포인트**다.
 외부에 열리면 안 되는데, 인증을 붙이는 것보다 **아예 루프백에만 바인딩하는 쪽**이 확실하다.
-nginx가 8081을 프록시하지 않으므로, 상태 확인은 서버에 들어가서만 가능하다.
+ALB는 8080(트래픽 포트)으로만 보내고 8081은 루프백이라, 상세 상태 확인은 서버에 들어가서만 가능하다.
 
 **로그를 두 곳에 쌓는 이유** — 인스턴스 안에는 Logback이 파일로 남기고, CloudWatch Agent가 같은 로그를
 밖으로 보낸다. 파일만 있으면 **인스턴스를 잃는 순간 장애 직전의 로그도 함께 사라진다.**
@@ -260,8 +259,8 @@ nginx가 8081을 프록시하지 않으므로, 상태 확인은 서버에 들어
 
 ![아키텍처](docs/images/architecture.png)
 
-애플리케이션은 **127.0.0.1에만 바인딩**되고, Actuator는 8081 루프백 전용이라 nginx가 프록시하지 않는다.
-외부에서 접근 가능한 경로는 nginx를 통과한 것뿐이다.
+요청은 **ALB를 거쳐서만** 들어온다. 앱은 8080으로 받고(`SERVER_ADDRESS=0.0.0.0`), EC2 보안 그룹은 8080을 ALB
+보안 그룹에서만 허용한다. Actuator는 8081 루프백 전용이라 ALB로도 닿지 않는다.
 
 ---
 
@@ -618,14 +617,15 @@ scp app/build/libs/app-0.0.1-SNAPSHOT.jar ubuntu@<host>:/tmp/albam.jar
 ```
 
 **빌드는 로컬에서 한다.** 작은 인스턴스에서 Gradle을 돌리면 메모리가 모자란다.
-nginx 설정과 systemd 유닛은 [`deploy/`](deploy/)에 있다. 서비스 이름·계정·경로(`albam`)는 기존 서버 설정을 그대로
+systemd 유닛은 [`deploy/systemd/`](deploy/systemd/)에 있다. 서비스 이름·계정·경로(`albam`)는 기존 서버 설정을 그대로
 쓰려고 옛 이름을 유지한다.
 
 > **`APP_FRONTEND_URL`을 빠뜨리면 조용히 깨진다.** 기본값이 `localhost:5173`이라 기동은 되지만, 비밀번호 재설정 메일이 사용자 자기 PC를 가리키는 링크를 담아 나간다. 재설정 폼은 그 링크로만 갈 수 있어 계정 복구가 막힌다.
 
 > **`COOKIE_SECURE=true`** 가 아니면 HTTPS에서 리프레시 쿠키가 나가지 않아 로그인이 통째로 깨진다.
 
-**운영 상태 확인** — Actuator는 8081 루프백 전용이라 nginx가 프록시하지 않는다.
+**운영 상태 확인** — ALB 헬스체크는 앱 상태와 DB만 보는 `/health`(8080)다. 상세 상태(Actuator)는 8081 루프백
+전용이라 ALB로는 닿지 않는다.
 
 ```bash
 curl localhost:8081/actuator/health    # 서버에 SSH로 들어가서

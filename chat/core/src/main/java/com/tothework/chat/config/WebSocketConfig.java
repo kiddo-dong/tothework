@@ -30,7 +30,7 @@ import org.springframework.web.socket.config.annotation.WebSocketTransportRegist
 @RequiredArgsConstructor
 class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-    /** 서버 → 클라이언트, 클라이언트 → 서버 하트비트 간격. 로드밸런서·nginx의 유휴 타임아웃(60초)보다 짧아야 한다. */
+    /** 서버 → 클라이언트, 클라이언트 → 서버 하트비트 간격. ALB의 유휴 타임아웃보다 짧아야 연결이 끊기지 않는다. */
     static final long HEARTBEAT_MS = 10_000;
 
     private final ChatProperties properties;

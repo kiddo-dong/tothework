@@ -16,8 +16,8 @@ import org.springframework.core.io.ClassPathResource;
  */
 class OperationalSettingsTest {
 
-    /** nginx의 proxy_read_timeout (deploy/nginx/albam.conf). */
-    private static final Duration NGINX_READ_TIMEOUT = Duration.ofSeconds(120);
+    /** ALB 유휴 타임아웃. 운영 ALB에 이 값으로 설정한다 (docs/chat-deployment.md). */
+    private static final Duration ALB_IDLE_TIMEOUT = Duration.ofSeconds(120);
 
     private static Properties settings;
 
@@ -37,14 +37,14 @@ class OperationalSettingsTest {
         }
     }
 
-    /** 재시도까지 합친 최악의 시간이 nginx가 끊기 전에 끝나야 한다. 아니면 사용자는 504를 받고 서버는 계속 비용을 낸다. */
+    /** 재시도까지 합친 최악의 시간이 ALB가 끊기 전에 끝나야 한다. 아니면 사용자는 504를 받고 서버는 계속 비용을 낸다. */
     @Test
-    void anAiCallFinishesBeforeNginxGivesUp() {
+    void anAiCallFinishesBeforeTheLoadBalancerGivesUp() {
         for (String model : new String[] {"chat", "embedding"}) {
             Duration timeout = DurationStyle.detectAndParse(settings.getProperty("spring.ai.openai." + model + ".timeout"));
             int attempts = 1 + Integer.parseInt(settings.getProperty("spring.ai.openai." + model + ".max-retries"));
 
-            assertThat(timeout.multipliedBy(attempts)).as(model).isLessThan(NGINX_READ_TIMEOUT);
+            assertThat(timeout.multipliedBy(attempts)).as(model).isLessThan(ALB_IDLE_TIMEOUT);
         }
     }
 

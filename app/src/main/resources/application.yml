@@ -31,8 +31,8 @@ spring:
       max-request-size: 10MB
 
   # Spring AI (OpenAI) — 근로 상담과 스케줄 초안에 쓴다.
-  # 기본값(요청당 60초, 재시도 3번)이면 한 요청이 4분까지 걸린다. nginx는 120초에 끊으므로, 사용자는 504를 받는데
-  # 서버는 계속 재시도하며 요금을 낸다. 최악의 경우를 (30초 × 2번)으로 nginx 안쪽에 묶는다.
+  # 기본값(요청당 60초, 재시도 3번)이면 한 요청이 4분까지 걸린다. ALB는 유휴 타임아웃(120초로 설정)에 끊으므로, 사용자는
+  # 504를 받는데 서버는 계속 재시도하며 요금을 낸다. 최악의 경우를 (30초 × 2번)으로 ALB 안쪽에 묶는다.
   ai:
     openai:
       api-key: ${OPENAI_API_KEY:}
@@ -73,8 +73,9 @@ spring:
       connect-timeout: 2s
       timeout: 2s
 
-# 앱은 루프백에만 바인딩하고 nginx가 앞에서 TLS를 끝낸다. 프록시가 붙인 X-Forwarded-*를 믿어야 리다이렉트·
-# 쿠키·호출 제한이 실제 클라이언트 기준으로 동작한다.
+# 운영에서는 ALB가 TLS를 끝내고 8080으로 보낸다. 기본 바인딩은 루프백이라 운영은 SERVER_ADDRESS=0.0.0.0으로 열고,
+# EC2 보안 그룹이 8080을 ALB에서만 허용한다. ALB가 붙인 X-Forwarded-*를 믿어야 리다이렉트·쿠키·호출 제한이 실제
+# 클라이언트 기준으로 동작한다(NATIVE는 사설 대역에서 온 헤더만 믿는다).
 server:
   address: ${SERVER_ADDRESS:127.0.0.1}
   port: 8080
@@ -93,7 +94,7 @@ logging:
     com.tothework: ${LOG_LEVEL_APP:INFO}
 
 # Actuator는 별도 포트의 루프백 전용. loggers는 로그 레벨을 바꾸는 쓰기 엔드포인트라 외부에 열면 안 되고,
-# nginx가 이 포트를 프록시하지 않는 것이 방어선이다. 확인은 서버에서 curl localhost:8081/actuator/health.
+# 루프백 바인딩이라 ALB로도 닿지 않는 것이 방어선이다. 확인은 서버에서 curl localhost:8081/actuator/health.
 management:
   server:
     port: ${MANAGEMENT_PORT:8081}

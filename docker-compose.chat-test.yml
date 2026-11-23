@@ -4,7 +4,8 @@
 #   cp deploy/chat-test/.env.example deploy/chat-test/.env   # 값 채우기
 #   docker compose -f docker-compose.chat-test.yml --env-file deploy/chat-test/.env up -d
 #
-# 브라우저는 nginx(http://localhost:8088)로만 들어온다. nginx가 app1·app2에 번갈아 보낸다.
+# 브라우저는 로컬 로드밸런서(lb, http://localhost:8088)로만 들어온다. 운영의 ALB 대신 nginx가 app1·app2에 번갈아
+# 보낸다. 운영에는 nginx가 없다.
 # 두 앱은 반드시 같은 MySQL을 쓴다. 인메모리 DB를 쓰면 서버마다 메시지가 따로 쌓여 재현이 성립하지 않는다.
 
 x-app: &app
@@ -18,7 +19,7 @@ x-app: &app
     redis:
       condition: service_healthy
   environment: &app-env
-    # 컨테이너 안에서는 nginx가 다른 컨테이너라 루프백이 아니라 모든 인터페이스에 바인딩한다.
+    # 로드밸런서가 다른 컨테이너라 루프백이 아니라 모든 인터페이스에 바인딩한다(운영의 ALB 뒤와 같다).
     SERVER_ADDRESS: 0.0.0.0
     DB_URL: jdbc:mysql://mysql:3306/tw_shared?createDatabaseIfNotExist=true&serverTimezone=Asia/Seoul
     DB_USERNAME: root
@@ -70,12 +71,13 @@ services:
       <<: *app-env
       SERVER_ID: app2
 
-  nginx:
+  # 운영의 ALB 대역. 로컬 전용이다.
+  lb:
     image: nginx:1.27-alpine
     ports:
       - "8088:80"
     volumes:
-      - ./deploy/chat-test/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./deploy/chat-test/local-alb.nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - app1
       - app2

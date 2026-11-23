@@ -1,18 +1,19 @@
 # 매장 채팅: 서버 2대 로컬 재현
 
-운영 구성(ALB + EC2 2대)을 로컬에서 흉내 낸다. 서로 다른 서버에 붙은 두 사람이 채팅을 주고받으려면 Redis Pub/Sub이
+운영 구성(ALB + EC2 2대)을 로컬에서 흉내 낸다. ALB 자리에는 로컬 전용 로드밸런서(lb, nginx 이미지)를 둔다. 운영에는
+nginx가 없다. 서로 다른 서버에 붙은 두 사람이 채팅을 주고받으려면 Redis Pub/Sub이
 왜 필요한지, 서버 하나가 내려갔다 올라올 때 어떻게 복구되는지를 직접 확인하는 용도다. 운영 배포용이 아니다.
 
 ```
-브라우저 ──> nginx :8088 ──┬──> app1 (SERVER_ID=app1) ──┐
+브라우저 ──> lb :8088 ──────┬──> app1 (SERVER_ID=app1) ──┐
                             └──> app2 (SERVER_ID=app2) ──┼──> MySQL (공유)
                                                          └──> Redis (chat:stores:* Pub/Sub)
 ```
 
 | 파일 | 역할 |
 |---|---|
-| `docker-compose.chat-test.yml` (저장소 루트) | app1·app2·MySQL·Redis·nginx |
-| `deploy/chat-test/nginx.conf` | 두 앱 라운드로빈, `/ws` 웹소켓 업그레이드 |
+| `docker-compose.chat-test.yml` (저장소 루트) | app1·app2·MySQL·Redis·lb |
+| `deploy/chat-test/local-alb.nginx.conf` | lb 설정. 두 앱 라운드로빈, `/ws` 웹소켓 업그레이드 |
 | `deploy/chat-test/seed.sh` | 사장·알바 계정과 둘이 속한 매장 생성 |
 | `deploy/chat-test/.env.example` | 재현용 DB 비밀번호·JWT 키 (복사해서 채움) |
 
@@ -37,9 +38,9 @@ alias chat-compose='docker compose -f docker-compose.chat-test.yml --env-file de
 - 테스트 페이지(`http://localhost:8088/chat-test.html`) 상태 표시: `연결됨 (서버: app1)`
 - STOMP로 `/app/server-info`를 구독하면 `{"serverId":"app1"}`이 한 번 온다
 - 앱 로그: `STOMP connected server=app1 session=... user=...`
-- REST 응답 헤더 `X-Upstream`: 응답한 앱의 주소 (nginx가 붙인다)
+- REST 응답 헤더 `X-Upstream`: 응답한 앱의 주소 (lb가 붙인다)
 
-nginx는 연결이 열릴 때 라운드로빈으로 서버를 고르므로, 탭을 새로 열면 번갈아 붙는다. 같은 서버에 붙었으면 탭을 닫고
+lb는 연결이 열릴 때 라운드로빈으로 서버를 고르므로, 탭을 새로 열면 번갈아 붙는다. 같은 서버에 붙었으면 탭을 닫고
 다시 연다.
 
 ## 검증 시나리오
@@ -102,9 +103,9 @@ chat-compose start app2
 - 확인한 결과: app2가 내려간 동안 새 연결 4개가 모두 app1에 붙었고, 그때 보낸 메시지가 app2 재시작 후 이전 메시지
   조회 맨 위에 있었다. 재시작한 app2와 app1 사이의 전달도 정상이었다.
 
-> 내려간 컨테이너의 주소로 가는 연결은 거절되지 않고 매달린다. nginx 기본 연결 타임아웃(60초) 동안 그 요청이
-> 기다리므로, 재현용 nginx는 `proxy_connect_timeout 2s`로 바로 다른 앱으로 넘긴다. 운영의 ALB는 헬스체크
-> (`/health`)로 내려간 서버를 빼므로 같은 문제가 없다.
+> 내려간 컨테이너의 주소로 가는 연결은 거절되지 않고 매달린다. lb의 기본 연결 타임아웃(60초) 동안 그 요청이
+> 기다리므로, `proxy_connect_timeout 2s`로 바로 다른 앱으로 넘긴다. 운영의 ALB는 헬스체크(`/health`)로 내려간
+> 서버를 빼므로 같은 문제가 없다.
 
 ## 정리
 

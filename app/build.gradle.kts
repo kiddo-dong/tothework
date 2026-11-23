@@ -23,6 +23,8 @@ dependencies {
     testImplementation("org.springframework.security:spring-security-test")
     // 채팅 STOMP 통합 테스트의 클라이언트(WebSocketStompClient)
     testImplementation("org.springframework.boot:spring-boot-starter-websocket")
+    // 다른 서버의 Redis 발행을 흉내 내는 채팅 통합 테스트
+    testImplementation("org.springframework.boot:spring-boot-starter-data-redis")
     // 메일 서버를 가짜로 바꾸려고 JavaMailSender 타입이 필요하다 (identity의 내부 의존성이라 직접 보이지 않는다)
     testImplementation("org.springframework.boot:spring-boot-starter-mail")
     testImplementation("org.testcontainers:testcontainers-junit-jupiter")

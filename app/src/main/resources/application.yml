@@ -61,6 +61,18 @@ spring:
       # 단일 인스턴스 배포라 재시작 때 미완료 이벤트를 다시 보낸다. 여러 대로 늘리면 끄고 다른 방식으로 재전달할 것.
       republish-outstanding-events-on-restart: true
 
+  # 서버 간 채팅 이벤트 전달(Pub/Sub)에만 쓴다. 저장소로 쓰지 않으므로 Redis가 비어도 잃는 데이터는 없다.
+  # 운영(ElastiCache 전송 중 암호화)에서는 REDIS_SSL=true. 응답이 없으면 메시지 전송이 오래 붙잡히지 않게 짧게 끊는다.
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      ssl:
+        enabled: ${REDIS_SSL:false}
+      connect-timeout: 2s
+      timeout: 2s
+
 # 앱은 루프백에만 바인딩하고 nginx가 앞에서 TLS를 끝낸다. 프록시가 붙인 X-Forwarded-*를 믿어야 리다이렉트·
 # 쿠키·호출 제한이 실제 클라이언트 기준으로 동작한다.
 server:

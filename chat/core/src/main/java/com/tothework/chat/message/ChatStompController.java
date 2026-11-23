@@ -12,8 +12,9 @@ import org.springframework.stereotype.Controller;
 /**
  * 채팅 전송·수정·삭제 (STOMP SEND {@code /app/stores/{storeId}/chat.*}).
  *
- * <p>순서: 서비스가 저장하고 트랜잭션이 커밋된 뒤에 방송한다. 실패하면 예외가 {@link ChatMessageExceptionAdvice}로
- * 가서 보낸 사람에게만 오류가 가고, 방송은 일어나지 않는다.
+ * <p>순서: 서비스가 저장하고 트랜잭션이 커밋된 뒤에 방송한다. 저장이 실패하면 예외가 {@link ChatMessageExceptionAdvice}로
+ * 가서 보낸 사람에게만 오류가 가고, 방송은 일어나지 않는다. 저장 뒤 방송(Redis 발행)만 실패하면 메시지는 남아 있고
+ * 보낸 사람에게 그 사실을 알린다.
  */
 @Controller
 @RequiredArgsConstructor

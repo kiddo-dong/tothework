@@ -29,6 +29,7 @@ import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.messaging.converter.ByteArrayMessageConverter;
@@ -63,6 +64,7 @@ class StoreChatStompTest {
     @Autowired private MockMvc mockMvc;
     @Autowired private JdbcClient jdbcClient;
     @Autowired private SimpUserRegistry userRegistry;
+    @Autowired private StringRedisTemplate redisTemplate;
     @MockitoBean private JavaMailSender mailSender;
 
     private WebSocketStompClient stompClient;
@@ -73,7 +75,7 @@ class StoreChatStompTest {
     private Account stranger;
     private long storeId;
 
-    /** 가입은 IP당 10분에 10번으로 제한돼 있어, 계정과 매장은 클래스에서 한 번만 만든다. */
+    /** 계정과 매장은 클래스에서 한 번만 만든다. 테스트 사이의 연결·구독은 tearDown에서 정리를 기다린다. */
     @BeforeAll
     void setUpStore() throws Exception {
         TestAccounts accounts = new TestAccounts(mockMvc, jdbcClient);
@@ -196,6 +198,39 @@ class StoreChatStompTest {
         String deleted = inbox.poll(5, TimeUnit.SECONDS);
         assertThat((String) JsonPath.read(deleted, "$.type")).isEqualTo("DELETED");
         assertThat((String) JsonPath.read(deleted, "$.message.content")).isEqualTo("삭제된 메시지입니다");
+    }
+
+    /**
+     * 다른 서버가 Redis에 발행한 이벤트도 이 서버의 구독자에게 간다. 서버가 2대일 때 서로 다른 서버에 붙은 사람끼리
+     * 메시지를 주고받는 경로가 이것이다.
+     */
+    @Test
+    void anEventPublishedByAnotherServerReachesSubscribersHere() throws Exception {
+        Client staffClient = connect(staff.bearer());
+        BlockingQueue<String> inbox = staffClient.subscribe(topic());
+        awaitSubscribers(topic(), 1);
+
+        redisTemplate.convertAndSend("chat:stores:" + storeId, """
+                {"type":"CREATED","message":{"id":987654,"storeId":%d,"senderId":1,"senderName":"다른 서버",
+                 "senderProfileImageUrl":null,"content":"app2에서 보냄","deleted":false,
+                 "createdAt":"2026-11-23T09:30:00","updatedAt":"2026-11-23T09:30:00"}}""".formatted(storeId));
+
+        String event = inbox.poll(5, TimeUnit.SECONDS);
+        assertThat(event).isNotNull();
+        assertThat((String) JsonPath.read(event, "$.message.content")).isEqualTo("app2에서 보냄");
+    }
+
+    /** 로컬 전송은 Redis 리스너 한 곳에서만 한다. 발행하면서 직접 보내기도 하면 같은 서버의 사람이 두 번 받는다. */
+    @Test
+    void aMessageIsDeliveredOnceToEachSubscriber() throws Exception {
+        Client staffClient = connect(staff.bearer());
+        BlockingQueue<String> inbox = staffClient.subscribe(topic());
+        awaitSubscribers(topic(), 1);
+
+        staffClient.send("chat.send", "{\"content\":\"한 번만\"}");
+
+        assertThat(inbox.poll(5, TimeUnit.SECONDS)).isNotNull();
+        assertThat(inbox.poll(1, TimeUnit.SECONDS)).as("같은 이벤트가 두 번 오면 안 된다").isNull();
     }
 
     // ---------- 도우미 ----------

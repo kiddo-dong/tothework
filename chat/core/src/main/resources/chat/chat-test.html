@@ -154,6 +154,10 @@
       // 연결될 때마다(재접속 포함) 호출된다. 구독은 연결에 묶여 있어 끊기면 사라지므로 여기서 매번 다시 건다.
       onConnect: async () => {
         $('status').textContent = '연결됨';
+        // 어느 서버에 붙었는지. 서버가 여러 대일 때 두 탭이 서로 다른 서버에 붙었는지 확인한다.
+        client.subscribe('/app/server-info', (m) => {
+          $('status').textContent = '연결됨 (서버: ' + JSON.parse(m.body).serverId + ')';
+        });
         client.subscribe('/user/queue/errors', (m) => log('오류: ' + JSON.parse(m.body).message));
         // 1) 구독을 먼저 건다. 2) 그다음 최신 메시지를 읽는다. 반대로 하면 둘 사이에 온 메시지를 놓친다.
         //    둘 다에 들어온 메시지는 id로 합쳐져 한 번만 보인다. 재접속 때는 끊긴 동안의 메시지가 여기서 채워진다.

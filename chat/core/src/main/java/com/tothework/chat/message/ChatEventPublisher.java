@@ -1,8 +1,11 @@
 package com.tothework.chat.message;
 
+import com.tothework.chat.config.ChatProperties;
+import com.tothework.chat.config.ChatProperties.Relay;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -15,6 +18,9 @@ import tools.jackson.databind.json.JsonMapper;
  *
  * <p>발행이 실패해도 메시지는 이미 DB에 커밋돼 있다. 예외를 던져 보낸 사람에게 알리고, 다른 사람은 재접속하거나
  * 방에 다시 들어올 때 이전 메시지 조회로 받는다.
+ *
+ * <p>{@code CHAT_RELAY=local}이면 Redis 없이 이 서버의 구독자에게만 보낸다. 서버 1대에서만 맞는 방식으로, 서버 2대
+ * 재현에서 비교용으로 쓴다(deploy/chat-test/README.md).
  */
 @Slf4j
 @Component
@@ -24,9 +30,15 @@ public class ChatEventPublisher {
     static final String CHANNEL_PREFIX = "chat:stores:";
 
     private final StringRedisTemplate redisTemplate;
+    private final SimpMessagingTemplate messagingTemplate;
     private final JsonMapper jsonMapper;
+    private final ChatProperties properties;
 
     public void publish(Long storeId, ChatEvent event) {
+        if (properties.relay() == Relay.LOCAL) {
+            messagingTemplate.convertAndSend(topicOf(storeId), event);
+            return;
+        }
         try {
             redisTemplate.convertAndSend(channelOf(storeId), jsonMapper.writeValueAsString(event));
         } catch (RuntimeException e) {

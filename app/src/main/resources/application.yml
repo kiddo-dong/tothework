@@ -139,6 +139,10 @@ tothework:
     allowed-origins: ${CHAT_ALLOWED_ORIGINS:${CORS_ALLOWED_ORIGINS:http://localhost:5173}}
     # 수동 테스트 페이지(/chat-test.html). 운영에서는 켜지 않는다.
     test-page-enabled: ${CHAT_TEST_PAGE_ENABLED:false}
+    # 서버 간 전달 방식. redis(기본, 서버 여러 대) 또는 local(서버 1대 전용, 서버 2대 재현의 비교용).
+    relay: ${CHAT_RELAY:redis}
+    # 이 서버의 이름. 클라이언트가 어느 서버에 붙었는지 보여 주고 연결 로그에 남는다.
+    server-id: ${SERVER_ID:${HOSTNAME:local}}
   storage:
     s3:
       bucket-name: ${AWS_S3_BUCKET_NAME:}

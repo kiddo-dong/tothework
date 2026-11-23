@@ -1,6 +1,8 @@
 package com.tothework.chat.stomp;
 
+import com.tothework.chat.config.ChatProperties;
 import java.security.Principal;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
@@ -13,11 +15,15 @@ import org.springframework.web.socket.messaging.SessionSubscribeEvent;
 /** 연결·구독·해제를 남긴다. 메시지 내용은 남기지 않는다. 서버가 여러 대일 때 누가 어디에 붙었는지 여기서 본다. */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 class StompSessionEventLogger {
+
+    private final ChatProperties properties;
 
     @EventListener
     void on(SessionConnectedEvent event) {
-        log.info("STOMP connected session={} user={}", sessionIdOf(event), userOf(event));
+        log.info("STOMP connected server={} session={} user={}", properties.serverId(), sessionIdOf(event),
+                userOf(event));
     }
 
     @EventListener

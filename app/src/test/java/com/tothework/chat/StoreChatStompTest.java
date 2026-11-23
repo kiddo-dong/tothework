@@ -233,6 +233,16 @@ class StoreChatStompTest {
         assertThat(inbox.poll(1, TimeUnit.SECONDS)).as("같은 이벤트가 두 번 오면 안 된다").isNull();
     }
 
+    /** /app/server-info를 구독하면 붙은 서버의 이름이 바로 온다. 서버 2대 재현에서 어느 서버에 붙었는지 확인하는 데 쓴다. */
+    @Test
+    void subscribingToServerInfoTellsWhichServerThisIs() throws Exception {
+        Client client = connect(stranger.bearer());
+        BlockingQueue<String> reply = client.subscribe("/app/server-info");
+
+        assertThat((String) JsonPath.read(reply.poll(5, TimeUnit.SECONDS), "$.serverId")).isNotBlank();
+        assertThat(client.session.isConnected()).isTrue();
+    }
+
     // ---------- 도우미 ----------
 
     private String topic() {

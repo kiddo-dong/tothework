@@ -24,7 +24,8 @@ import org.springframework.stereotype.Component;
  *
  * <ul>
  *   <li>CONNECT: {@code Authorization: Bearer} 액세스 토큰을 HTTP와 같은 방식으로 검증하고 세션의 주체를 정한다.
- *   <li>SUBSCRIBE·SEND: 주소의 storeId에 대해 그 매장의 재직 멤버인지 확인한다. 알려진 주소만 허용한다.
+ *   <li>SUBSCRIBE·SEND: 주소의 storeId에 대해 그 매장의 재직 멤버인지 확인한다. 알려진 주소만 허용한다. 매장과
+ *       무관한 개인 오류 큐와 서버 정보 구독은 로그인만 확인한다.
  * </ul>
  *
  * <p>여기서 던진 예외는 {@link StompErrorHandler}가 ERROR 프레임으로 바꾸고 연결이 끊긴다. "남의 메시지 수정"
@@ -41,6 +42,8 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
     private static final Pattern STORE_TOPIC = Pattern.compile("^/topic/stores/(\\d+)/chat$");
     private static final Pattern STORE_SEND = Pattern.compile("^/app/stores/(\\d+)/chat\\.(send|edit|delete)$");
     private static final String ERROR_QUEUE = "/user/queue/errors";
+    /** 붙은 서버의 이름만 돌려주는 요청-응답 구독(ServerInfoController). 매장 데이터가 없어 소속 확인이 필요 없다. */
+    private static final String SERVER_INFO = "/app/server-info";
 
     private final JwtTokens jwtTokens;
     private final AuthenticatedUserLoader userLoader;
@@ -80,13 +83,13 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
         return new StompPrincipal(user.userId());
     }
 
-    private void authorize(StompHeaderAccessor accessor, Pattern storeDestination, boolean allowErrorQueue) {
+    private void authorize(StompHeaderAccessor accessor, Pattern storeDestination, boolean allowPersonal) {
         Long userId = userIdOf(accessor.getUser());
         String destination = accessor.getDestination();
         if (destination == null) {
             throw new InvalidRequestException("주소가 없습니다.");
         }
-        if (allowErrorQueue && ERROR_QUEUE.equals(destination)) {
+        if (allowPersonal && (ERROR_QUEUE.equals(destination) || SERVER_INFO.equals(destination))) {
             return;
         }
         Matcher matcher = storeDestination.matcher(destination);

@@ -1,6 +1,7 @@
 package com.tothework.chat.config;
 
 import com.tothework.chat.message.RedisChatSubscriber;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -13,8 +14,11 @@ import org.springframework.data.redis.listener.RedisMessageListenerContainer;
  * <p>방(매장)마다 구독을 걸고 푸는 방식은 쓰지 않는다. 그 서버에 누가 어느 방에 있는지 추적해야 하고, 구독이 늦게
  * 걸리는 순간의 메시지를 놓칠 수 있다. 사용자가 적어 모든 서버가 모든 매장의 이벤트를 받아도 부담이 없다. 받은
  * 서버에 그 방 구독자가 없으면 SimpleBroker가 아무에게도 보내지 않을 뿐이다.
+ *
+ * <p>{@code CHAT_RELAY=local}이면 등록하지 않는다. 그때는 발행도 하지 않으므로 받을 것이 없다.
  */
 @Configuration(proxyBeanMethods = false)
+@ConditionalOnProperty(name = "tothework.chat.relay", havingValue = "redis", matchIfMissing = true)
 class ChatRedisConfig {
 
     static final PatternTopic ALL_STORE_CHATS = new PatternTopic("chat:stores:*");

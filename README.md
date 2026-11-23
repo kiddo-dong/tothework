@@ -522,6 +522,7 @@ public static final int MINOR_MAX_WEEKLY_WORK_MINUTES = 35 * 60;   // 연소자
 | **JDK 25** | Gradle toolchain이 25를 타깃으로 한다. Gradle은 래퍼(`./gradlew`)가 받는다 |
 | **MySQL 8** | 서비스별 스키마(`tw_*`)는 Flyway가 만든다. 접속 계정에 스키마 생성 권한만 있으면 된다 |
 | **PostgreSQL + pgvector** | AI 상담을 쓸 때만 필요하다 |
+| **Redis** | 매장 채팅의 실시간 전달. 로컬은 `docker run -p 6379:6379 redis:7.4-alpine` |
 
 ### 벡터 DB 준비 (AI 상담용)
 
@@ -554,6 +555,7 @@ GMAIL_USERNAME=...  GMAIL_APP_PASSWORD=...   # 없으면 메일을 보내는 순
 선택 — 없으면 해당 기능만 동작하지 않는다.
 
 ```bash
+REDIS_HOST=localhost        # 매장 채팅의 실시간 전달. 없으면 채팅 메시지는 저장되지만 실시간으로 가지 않는다
 OPENAI_API_KEY=...          # AI 상담·스케줄 초안
 VECTOR_DB_PASSWORD=...      # AI 상담
 ADMIN_INGEST_TOKEN=...      # 없으면 지식베이스 적재 API 자체가 닫힌다
@@ -586,7 +588,7 @@ curl -X POST -H "Authorization: Bearer $TOKEN" -H "X-Admin-Token: $ADMIN_INGEST_
 ## 검증
 
 ```bash
-./gradlew build                                              # Docker(Testcontainers)로 빈 MySQL을 띄운다
+./gradlew build                                              # Docker(Testcontainers)로 빈 MySQL·Redis를 띄운다
 SPRING_PROFILES_ACTIVE=localdb DB_PASSWORD=... ./gradlew build   # Docker가 없으면 로컬 MySQL로
 ```
 
@@ -599,7 +601,8 @@ SPRING_PROFILES_ACTIVE=localdb DB_PASSWORD=... ./gradlew build   # Docker가 없
 | **동시성** | 실제 스레드 8개로 같은 시간대 스케줄·출근·체크를 동시에 밀어 넣는다 | 락을 빼면 8건 모두 저장 |
 | **쿼리 수** | 데이터를 늘리기 전후 쿼리 수가 같은지 (datasource-proxy) | 거래처 목록을 품목마다 조회하게 바꾸면 9 → 12로 실패 |
 | **경계** | 다른 서비스 core 의존(빌드), 순환(Modulith), 서비스 안 패키지 방향(ArchUnit) | 역방향 참조를 넣으면 실패 |
-| **API 문서** | Swagger 문서에 117개 API가 모두 실리는지 | — |
+| **API 문서** | Swagger 문서에 118개 API(기존 117개 + 채팅 조회)가 모두 실리는지 | — |
+| **채팅** | 실제 포트에 WebSocket으로 붙어 인증·구독 권한·두 사람 수신·오류 분리·Redis 경유 전달을 본다 | 발행과 로컬 전송을 함께 하면 "한 번만 받는다" 테스트가 실패 |
 
 > N+1과 동시성 결함은 **코드를 읽어서는 드러나지 않고** 데이터 두어 건으로는 체감되지 않는다.
 > 그래서 재현 조건을 테스트가 직접 만든다.
@@ -638,6 +641,9 @@ curl localhost:8081/actuator/health    # 서버에 SSH로 들어가서
 | [`docs/frontend-role-guide.md`](docs/frontend-role-guide.md) | 역할별 화면·API 매핑 |
 | [`docs/design/`](docs/design/) | 서비스별 설계와 옮기며 알게 된 것 (store · workforce · operations) |
 | [`docs/http/`](docs/http/) | 흐름별 curl 스크립트 |
+| [`docs/chat-architecture.md`](docs/chat-architecture.md) | 매장 단체 채팅(STOMP + Redis Pub/Sub)의 흐름과 설계 이유 |
+| [`docs/chat-deployment.md`](docs/chat-deployment.md) | ALB + EC2 2대 + ElastiCache로 옮길 때 할 일 |
+| [`deploy/chat-test/`](deploy/chat-test/README.md) | 채팅을 서버 2대로 로컬 재현 (docker compose) |
 
 ---
 

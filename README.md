@@ -232,8 +232,10 @@ AI 엔드포인트에는 호출 제한이 걸려 있다(`shared/ratelimit`). 비
 
 | 분류 | 사용 기술 | 비고 |
 |---|---|---|
-| **서버** | AWS EC2 (`ap-northeast-2`) | 앱 + PostgreSQL을 한 인스턴스에 둔다 |
+| **서버** | AWS EC2 ×2 (`ap-northeast-2`, 프라이빗 서브넷) | ALB 뒤에서 앱만 실행한다 |
 | **DB** | AWS RDS (MySQL 8) | 업무 데이터. 자동 백업·유지보수 창 위임 |
+| **벡터 DB** | AWS RDS for PostgreSQL + pgvector | 근로기준법 임베딩. 두 서버가 함께 쓴다 |
+| **캐시·메시징** | AWS ElastiCache (Redis/Valkey) | 채팅 서버 간 전달(Pub/Sub), 호출 제한 카운터 |
 | **스토리지** | AWS S3 | 프로필·매장·매뉴얼 이미지. key로 저장하고 URL은 조립 |
 | **모니터링** | Amazon CloudWatch | EC2 기본 지표(CPU·네트워크·디스크) + **CloudWatch Agent로 로그 수집** |
 | **프로세스 관리** | systemd | 전용 계정으로 실행, 부팅 시 자동 기동, 시크릿은 `EnvironmentFile` |

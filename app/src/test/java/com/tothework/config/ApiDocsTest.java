@@ -32,8 +32,10 @@ class ApiDocsTest {
 
         Map<String, Map<String, Object>> paths = JsonPath.read(docs, "$.paths");
         int operations = paths.values().stream().mapToInt(Map::size).sum();
-        assertThat(operations).as("문서에 실린 API 수 (기존 백엔드와 같은 117개)").isEqualTo(117);
+        // 기존 백엔드와 같은 117개 + 매장 채팅의 이전 메시지 조회 1개. 채팅 전송·수정·삭제는 STOMP라 문서에 없다.
+        assertThat(operations).as("문서에 실린 API 수").isEqualTo(118);
         assertThat(paths).containsKeys("/api/v1/auth/login", "/api/v1/stores/{storeId}/home",
-                "/api/v1/stores/{storeId}/payroll", "/api/v1/stores/{storeId}/menus", "/api/v1/labor-qa/sessions");
+                "/api/v1/stores/{storeId}/payroll", "/api/v1/stores/{storeId}/menus", "/api/v1/labor-qa/sessions",
+                "/api/v1/stores/{storeId}/chat/messages");
     }
 }

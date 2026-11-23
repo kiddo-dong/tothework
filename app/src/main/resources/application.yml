@@ -122,6 +122,11 @@ tothework:
     cors:
       # 리프레시 토큰 쿠키 때문에 와일드카드를 쓸 수 없어 오리진을 나열한다.
       allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  chat:
+    # 웹소켓 핸드셰이크를 허용할 오리진. 따로 주지 않으면 CORS와 같은 프론트 주소를 쓴다. 콤마로 여러 개.
+    allowed-origins: ${CHAT_ALLOWED_ORIGINS:${CORS_ALLOWED_ORIGINS:http://localhost:5173}}
+    # 수동 테스트 페이지(/chat-test.html). 운영에서는 켜지 않는다.
+    test-page-enabled: ${CHAT_TEST_PAGE_ENABLED:false}
   storage:
     s3:
       bucket-name: ${AWS_S3_BUCKET_NAME:}

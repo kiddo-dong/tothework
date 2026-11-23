@@ -24,6 +24,7 @@ class ApplicationStartsTest {
                 .list();
 
         assertThat(schemas).containsExactlyInAnyOrder(
-                "tw_shared", "tw_identity", "tw_store", "tw_workforce", "tw_operations", "tw_laborqa");
+                "tw_shared", "tw_identity", "tw_store", "tw_workforce", "tw_operations", "tw_laborqa",
+                "tw_chat");
     }
 }

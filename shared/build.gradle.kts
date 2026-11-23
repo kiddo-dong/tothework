@@ -28,4 +28,7 @@ dependencies {
     // 서버가 여러 대일 때 예약 작업을 한 대에서만 돌린다(@SchedulerLock). 락은 공유 MySQL에 둔다.
     api(libs.shedlock.spring)
     implementation(libs.shedlock.jdbc)
+
+    // 서버가 여러 대일 때 호출 제한 카운터를 함께 센다.
+    implementation("org.springframework.boot:spring-boot-starter-data-redis")
 }

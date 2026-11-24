@@ -7,6 +7,7 @@ import com.tothework.store.api.MemberRole;
 import com.tothework.store.api.MemberStatus;
 import com.tothework.store.api.Membership;
 import com.tothework.store.api.StoreAccess;
+import com.tothework.store.api.StoreCreatedEvent;
 import com.tothework.store.member.MemberAdmission;
 import com.tothework.store.member.StoreMember;
 import com.tothework.store.member.StoreMemberRepository;
@@ -17,6 +18,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Propagation;
@@ -41,15 +43,20 @@ public class StoreService {
     private final StoreAccess storeAccess;
     private final S3Uploader s3Uploader;
     private final PlatformTransactionManager transactionManager;
+    private final ApplicationEventPublisher eventPublisher;
     private final SecureRandom secureRandom = new SecureRandom();
 
-    /** 개설자는 OWNER로 합류한다. 고용 조건(시급 0 등)은 합류 이벤트를 받은 workforce가 만든다. */
+    /**
+     * 개설자는 OWNER로 합류한다. 고용 조건(시급 0 등)은 합류 이벤트를 받은 workforce가 만든다. 매장 생성 이벤트는 같은
+     * 트랜잭션 안에서 받는 쪽(chat의 매장 채팅방)이 있어, 그쪽이 실패하면 매장 생성도 함께 되돌아간다.
+     */
     @Transactional
     public StoreResponse createStore(Long userId, CreateStoreRequest request) {
         Store store = storeRepository.save(Store.open(request.name(), request.address(),
                 request.businessRegistrationNumber(), request.category(), toBusinessHours(request.businessHours()),
                 generateUniqueInviteCode(), request.breakPolicy(), request.smallBusiness(), request.payday()));
         memberAdmission.admit(store.getId(), userId, MemberRole.OWNER);
+        eventPublisher.publishEvent(new StoreCreatedEvent(store.getId()));
         return toResponse(store);
     }
 

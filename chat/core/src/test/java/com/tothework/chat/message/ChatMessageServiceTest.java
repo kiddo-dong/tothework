@@ -11,6 +11,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.tothework.chat.room.ChatRooms;
 import com.tothework.identity.api.UserDirectory;
 import com.tothework.identity.api.UserSummary;
 import com.tothework.shared.error.ConflictException;
@@ -47,6 +48,7 @@ class ChatMessageServiceTest {
     @Mock private ChatMessageRepository repository;
     @Mock private StoreAccess storeAccess;
     @Mock private UserDirectory userDirectory;
+    @Mock private ChatRooms chatRooms;
     @InjectMocks private ChatMessageService service;
 
     @BeforeEach
@@ -80,6 +82,15 @@ class ChatMessageServiceTest {
     @Test
     void lengthIsCountedInCharactersNotUtf16Units() {
         assertThat(service.send(STORE_ID, ME, "😀".repeat(500)).content()).hasSize(1000);
+    }
+
+    /** 매장의 방이 없으면(생성 이벤트나 기존 매장 채우기가 빠졌다) 저장하지 않고 404다. 조용히 방을 만들지 않는다. */
+    @Test
+    void sendingToAStoreWithoutARoomIsNotFound() {
+        when(chatRooms.requireOf(STORE_ID)).thenThrow(new NotFoundException("채팅방을 찾을 수 없습니다."));
+
+        assertThatThrownBy(() -> service.send(STORE_ID, ME, "안녕")).isInstanceOf(NotFoundException.class);
+        verify(repository, never()).save(any());
     }
 
     @Test

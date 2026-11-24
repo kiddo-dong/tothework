@@ -28,6 +28,9 @@ public interface StoreRepository extends ListCrudRepository<Store, Long> {
 
     boolean existsByInviteCode(String inviteCode);
 
+    @Query("SELECT id FROM " + TABLE + " WHERE deleted_at IS NULL")
+    List<Long> findAllActiveIds();
+
     @Query("SELECT id FROM " + TABLE + " WHERE deleted_at IS NOT NULL AND deleted_at < :cutoff")
     List<Long> findIdsSoftDeletedBefore(LocalDateTime cutoff);
 

@@ -1,5 +1,6 @@
 package com.tothework.chat.message;
 
+import com.tothework.chat.room.ChatRooms;
 import com.tothework.identity.api.UserDirectory;
 import com.tothework.identity.api.UserSummary;
 import com.tothework.shared.error.InvalidRequestException;
@@ -30,9 +31,11 @@ public class ChatMessageService {
     private final ChatMessageRepository repository;
     private final StoreAccess storeAccess;
     private final UserDirectory userDirectory;
+    private final ChatRooms chatRooms;
 
     @Transactional
     public ChatMessageResponse send(Long storeId, Long userId, String content) {
+        chatRooms.requireOf(storeId);
         return toResponse(repository.save(ChatMessage.write(storeId, userId, content)));
     }
 
@@ -56,6 +59,7 @@ public class ChatMessageService {
      */
     public List<ChatMessageResponse> getMessages(Long storeId, Long userId, Long before, int size) {
         storeAccess.requireMember(storeId, userId);
+        chatRooms.requireOf(storeId);
         if (size < 1 || size > MAX_PAGE_SIZE) {
             throw new InvalidRequestException("size는 1~" + MAX_PAGE_SIZE + " 사이여야 합니다.");
         }

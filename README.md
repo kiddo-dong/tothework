@@ -12,6 +12,7 @@
 ![Gradle](https://img.shields.io/badge/Gradle-9-02303A?style=flat-square)
 ![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=flat-square)
 ![pgvector](https://img.shields.io/badge/pgvector-4169E1?style=flat-square)
+![Redis](https://img.shields.io/badge/Redis%20(ElastiCache)-DC382D?style=flat-square)
 ![Spring AI](https://img.shields.io/badge/Spring%20AI-2.0.0-6DB33F?style=flat-square)
 
 <br>
@@ -154,6 +155,16 @@ AI 엔드포인트에는 호출 제한이 걸려 있다(`shared/ratelimit`). 비
 
 설명과 숫자를 다르게 다루는 이유는 [설계 포인트](#ai-상담은-설명과-숫자를-다르게-다룬다)에 적었다.
 
+### 매장 채팅
+
+매장마다 단체 채팅방이 하나 있다. 매장을 만들면 같은 트랜잭션에서 방이 생기고, 그 매장의 재직 멤버만 들어올 수 있다.
+
+- 이전 메시지는 REST로, 새 메시지는 **WebSocket(STOMP)** 으로 실시간 주고받는다. 수정·삭제도 실시간으로 반영된다.
+- 서버가 2대라 서로 다른 서버에 붙은 사람도 같은 메시지를 받도록 **Redis Pub/Sub**으로 서버 사이에 전달한다.
+- 권한이 없는 연결은 끊고, 남의 메시지 수정 같은 실수는 보낸 사람에게만 알리고 연결은 유지한다.
+
+흐름과 설계 이유는 [`docs/chat-architecture.md`](docs/chat-architecture.md)에 있다.
+
 ### 매장 운영
 
 | 기능 | 내용 |
@@ -181,7 +192,7 @@ AI 엔드포인트에는 호출 제한이 걸려 있다(`shared/ratelimit`). 비
 
 ## 기존 구조와 무엇이 다른가
 
-같은 기능, 같은 API(117개)를 두 가지 구조로 담고 있다. [`layered`](https://github.com/kiddo-dong/tothework/tree/layered)
+같은 기능, 같은 API(117개)를 두 가지 구조로 담고 있다(`main`에는 그 뒤에 매장 채팅이 더해졌다). [`layered`](https://github.com/kiddo-dong/tothework/tree/layered)
 브랜치가 출발점인 레이어드 구조이고, `main`이 그것을 모듈러 모놀리스로 다시 지은 결과다.
 
 | | `layered` | `main` |
@@ -220,9 +231,11 @@ AI 엔드포인트에는 호출 제한이 걸려 있다(`shared/ratelimit`). 비
 | **업무 DB** | MySQL 8 — 서비스마다 스키마 | 테이블 소유권을 서비스 단위로 |
 | **벡터 DB** | PostgreSQL 16 + pgvector 0.6 | 근로기준법 문서 임베딩 검색 |
 | **AI** | Spring AI 2.0, OpenAI `gpt-4.1-mini`, `text-embedding-3-small` | 임베딩 1536차원 |
+| **실시간** | WebSocket + STOMP, Redis Pub/Sub | 매장 채팅. 서버 2대 사이의 메시지 전달 |
+| **분산 협조** | ShedLock (MySQL), Redis 카운터 | 예약 작업을 한 서버에서만, 호출 제한을 두 서버가 함께 센다 |
 | **인증** | JWT (jjwt), OAuth2 | 리프레시 토큰은 DB에 해시로 보관 |
 | **스토리지** | AWS S3 | 프로필·매뉴얼 이미지 |
-| **테스트** | JUnit 5, Testcontainers, ArchUnit, datasource-proxy | 실제 MySQL·경계 규칙·쿼리 수 |
+| **테스트** | JUnit 5, Testcontainers, ArchUnit, datasource-proxy | 실제 MySQL·Redis·경계 규칙·쿼리 수 |
 
 영속성은 JPA 대신 **Spring Data JDBC**를 쓴다. 지연 로딩·변경 감지·프록시가 없어 엔티티를 타고 다른 서비스로
 결합이 새어 나갈 수 없다. 목록처럼 자식 컬렉션을 여러 루트에 걸쳐 읽는 곳은 SQL을 직접 쓴다
@@ -239,6 +252,8 @@ AI 엔드포인트에는 호출 제한이 걸려 있다(`shared/ratelimit`). 비
 | **스토리지** | AWS S3 | 프로필·매장·매뉴얼 이미지. key로 저장하고 URL은 조립 |
 | **모니터링** | Amazon CloudWatch | EC2 기본 지표(CPU·네트워크·디스크) + **CloudWatch Agent로 로그 수집** |
 | **프로세스 관리** | systemd | 전용 계정으로 실행, 부팅 시 자동 기동, 시크릿은 `EnvironmentFile` |
+| **배포** | 로컬 빌드 → S3 → SSM으로 한 대씩 | 현재는 수동이다. 그림의 Docker·ECR·GitHub Actions 자동 배포는 전환 예정 |
+| **서버 접근** | AWS Systems Manager (SSM) | SSH를 열지 않는다. 세션과 원격 명령 모두 SSM |
 | **로드밸런서** | AWS ALB | TLS 종료(ACM 인증서), EC2의 `8080`으로 전달, 헬스체크 `/health` |
 | **프론트엔드** | Vercel | [`tothework.com`](https://tothework.com) |
 | **운영 상태** | Spring Boot Actuator | `health`·`info`·`metrics`·`loggers`, **8081 루프백 전용** |
@@ -250,7 +265,7 @@ ALB는 8080(트래픽 포트)으로만 보내고 8081은 루프백이라, 상세
 
 **로그를 두 곳에 쌓는 이유** — 인스턴스 안에는 Logback이 파일로 남기고, CloudWatch Agent가 같은 로그를
 밖으로 보낸다. 파일만 있으면 **인스턴스를 잃는 순간 장애 직전의 로그도 함께 사라진다.**
-반대로 로컬 파일이 있어야 SSH로 들어가 바로 `tail`할 수 있다.
+반대로 로컬 파일이 있어야 SSM 세션으로 들어가 바로 `tail`할 수 있다.
 
 **로그 상한을 건 이유** — 작은 인스턴스에서 로그가 디스크를 채우면 앱이 아니라 **서버가 죽는다.**
 총량 상한이 있어야 최악의 경우가 "오래된 로그 유실"에서 멈춘다.
@@ -261,8 +276,12 @@ ALB는 8080(트래픽 포트)으로만 보내고 8081은 루프백이라, 상세
 
 ![아키텍처](docs/images/architecture.png)
 
-요청은 **ALB를 거쳐서만** 들어온다. 앱은 8080으로 받고(`SERVER_ADDRESS=0.0.0.0`), EC2 보안 그룹은 8080을 ALB
-보안 그룹에서만 허용한다. Actuator는 8081 루프백 전용이라 ALB로도 닿지 않는다.
+- 요청은 **ALB를 거쳐서만** 들어온다. 앱은 8080으로 받고(`SERVER_ADDRESS=0.0.0.0`), EC2 보안 그룹은 8080을 ALB
+  보안 그룹에서만 허용한다. Actuator는 8081 루프백 전용이라 ALB로도 닿지 않는다.
+- 앱 서버 2대는 서로 다른 가용 영역의 프라이빗 서브넷에 있고, **같은 jar를 같은 설정으로** 돌린다. 상태는 서버에 두지
+  않고 공유 저장소에 둔다. 업무 데이터는 RDS MySQL, 벡터는 RDS PostgreSQL, 채팅 전달·호출 제한은 ElastiCache다.
+- 서버 밖으로 나가는 통신(OpenAI, 메일, 소셜 로그인)은 NAT Gateway를, S3는 Gateway VPC Endpoint를 거친다.
+- 그림 아래의 CI/CD(GitHub Actions → ECR → SSM)는 **전환 예정**이다. 지금은 [배포](#배포)의 수동 절차를 쓴다.
 
 ---
 
@@ -279,12 +298,13 @@ ALB는 8080(트래픽 포트)으로만 보내고 8081은 루프백이라, 상세
 | `workforce` | 스케줄·근태·연차·급여·고용 조건 | `tw_workforce` |
 | `operations` | 체크리스트·공지·인수인계·매뉴얼·거래처·메뉴 | `tw_operations` |
 | `laborqa` | AI 근로 상담 | `tw_laborqa` (+ 벡터 DB) |
+| `chat` | 매장 단체 채팅 (STOMP, Redis Pub/Sub) | `tw_chat` |
 | `bff` | 화면용 조합 API(홈, 멤버 상세). 서비스가 아니다 | 없음 |
 
 ```
 <service>/api    서비스 간 계약 — 레코드·이벤트·인터페이스만
 <service>/core   구현 — Spring Data JDBC, 자기 스키마의 Flyway 마이그레이션
-shared           공통 기반 (보안 필터, 에러 응답, S3, 호출 제한 — 도메인 개념 없음)
+shared           공통 기반 (보안 필터, 에러 응답, S3, 호출 제한, 예약 작업 락 — 도메인 개념 없음)
 bff              여러 서비스의 api를 조합
 app              모두를 하나의 프로세스로 조립하는 실행 모듈 (API 문서, 통합 테스트)
 ```
@@ -303,13 +323,16 @@ app              모두를 하나의 프로세스로 조립하는 실행 모듈 
 
 - **조회**: 다른 서비스의 `api` 인터페이스를 부른다. 예: workforce가 store의 `StoreAccess`로 권한을, identity의
   `UserDirectory`로 이름을 묻는다. 목록은 서비스마다 한 번씩만 묻는다.
-- **이벤트**: `@ApplicationModuleListener`로 받는다. 발행한 쪽이 커밋된 뒤 **별도 트랜잭션에서 비동기로** 실행되고,
-  처리하지 못한 이벤트는 `tw_shared.EVENT_PUBLICATION`에 남아 재시작할 때 다시 전달된다.
+- **이벤트**: 대부분 `@ApplicationModuleListener`로 받는다. 발행한 쪽이 커밋된 뒤 **별도 트랜잭션에서 비동기로**
+  실행된다. 처리하지 못한 이벤트는 `tw_shared.EVENT_PUBLICATION`에 남고, 실패로 확정된 것은 5분마다 **한 서버에서만**
+  다시 보낸다(서버가 2대라 재시작할 때 다시 보내는 방식은 쓰지 않는다). 매장 생성처럼 함께 있어야 하는 것은 같은
+  트랜잭션(`BEFORE_COMMIT`)에서 받는다.
 
 | 이벤트 | 내는 곳 | 받는 곳 |
 |---|---|---|
+| `StoreCreatedEvent` | store (같은 트랜잭션) | chat — 매장 채팅방 생성 |
 | `MemberJoinedEvent` | store | workforce — 기본 고용 조건 생성 |
-| `StorePurgedEvent` | store (유예기간 뒤 완전 삭제) | workforce·operations — 그 매장의 데이터 삭제 |
+| `StorePurgedEvent` | store (유예기간 뒤 완전 삭제) | workforce·operations·chat — 그 매장의 데이터 삭제 |
 | `UserWithdrawnEvent` | identity | store·laborqa — 신청·상담 이력 정리 |
 
 - **화면 조합**: 홈 화면은 bff가 권한을 한 번 확인한 뒤 각 서비스의 조회 계약(`Schedules`·`Attendances`·`Payrolls`·
@@ -317,14 +340,15 @@ app              모두를 하나의 프로세스로 조립하는 실행 모듈 
 - **인증**: 토큰 검증·보안 필터는 `shared.security`에 있어 서비스가 나뉘어도 각자 검증할 수 있다. 발급과 사용자
   저장은 identity만 한다. 로그인 없이 열 경로는 각 서비스가 `PublicEndpoints` 빈으로 등록한다.
 
-설계 문서: [store](docs/design/store.md) · [workforce](docs/design/workforce.md) · [operations](docs/design/operations.md)
+설계 문서: [store](docs/design/store.md) · [workforce](docs/design/workforce.md) · [operations](docs/design/operations.md) · [chat](docs/chat-architecture.md)
 
 ---
 
 ## ERD
 
 서비스마다 스키마가 따로다. 같은 스키마 안에서만 외래키를 걸고, **다른 서비스의 행은 id 값(`memberId`·`userId`·`storeId`)으로만
-가리킨다.** 아래 그림에 서비스를 넘는 선이 없는 이유다. 전체는 서비스 테이블 30개와 공용 이벤트 발행 기록 1개다.
+가리킨다.** 아래 그림에 서비스를 넘는 선이 없는 이유다. 전체는 서비스 테이블 32개와 공용 인프라 테이블 2개(이벤트 발행
+기록, 예약 작업 락)다.
 
 ```mermaid
 erDiagram
@@ -352,6 +376,9 @@ erDiagram
 
     %% tw_laborqa — user_id = users.id (외래키 없음)
     labor_qa_sessions ||--o{ labor_qa_messages : "대화"
+
+    %% tw_chat — store_id = stores.id (외래키 없음). 방과 메시지는 store_id로 묶인다
+    chat_rooms ||--o{ chat_messages : "메시지"
 ```
 
 | 스키마 | 테이블 | 다른 서비스를 가리키는 값 |
@@ -361,6 +388,8 @@ erDiagram
 | `tw_workforce` | employment_terms, employment_available_days, shifts, shift_templates, attendances, leave_usages, payrolls | `member_id`, `store_id` |
 | `tw_operations` | checklist_items·completions, notices·notice_reads, handover_notes, manuals·images, suppliers·items·quantities, menu_ingredients, store_menus, menu_recipe_items | `store_id`, 작성자·확인자 `member_id` |
 | `tw_laborqa` | labor_qa_sessions, labor_qa_messages | `user_id` |
+| `tw_chat` | chat_rooms, chat_messages | `store_id`, 보낸 사람 `user_id` |
+| `tw_shared` | EVENT_PUBLICATION, shedlock (공용 인프라) | — |
 
 **소속과 고용 조건은 같은 memberId로 두 서비스에 나뉜다.** `store_members`(역할·직함·상태)는 store가,
 `employment_terms`(시급·공제 방식·주휴일·근무 가능 요일)는 workforce가 갖는다. 근태·스케줄·급여가 `users`가 아니라
@@ -479,11 +508,29 @@ public static final int MINOR_MAX_WEEKLY_WORK_MINUTES = 35 * 60;   // 연소자
 `StoreAccess`). 어떤 권한이 필요한지 코드를 읽으면 바로 보이고, 매장 소속 여부와 매장 삭제 여부까지 한 번에
 확인된다. 예전에는 각 테이블이 `stores`와 JOIN해 삭제된 매장을 걸렀는데, 서비스가 나뉘면 그 JOIN은 불가능하다.
 
+### 서버가 2대면, 서버 메모리에 둔 것은 전부 다시 본다
+
+ALB 뒤에 서버를 하나 더 붙이자 "서버가 한 대"라고 가정한 곳이 드러났다. 기능은 그대로 돌아서 겉으로는 티가 나지
+않는 것들이다.
+
+| 서버 한 대일 때 | 두 대가 되면 | 지금 |
+|---|---|---|
+| 채팅 구독자가 서버 메모리(SimpleBroker)에 있다 | 다른 서버에 붙은 사람에게 메시지가 가지 않는다 | Redis Pub/Sub. 발행만 하고, 각 서버의 리스너 한 곳에서만 자기 구독자에게 보낸다 |
+| 호출 제한 카운터가 서버 메모리에 있다 | 한도가 사실상 2배가 된다 | Redis에서 함께 센다. Redis에 닿지 못하면 서버 메모리로 물러난다 |
+| `@Scheduled` 작업이 서버마다 돈다 | 매장 완전 삭제가 두 번 돌아 삭제 이벤트가 두 번 나간다 | ShedLock. 공유 MySQL의 락을 잡은 한 서버만 돈다 |
+| 재시작할 때 미완료 이벤트를 다시 보낸다 | 다른 서버가 처리 중인 이벤트까지 두 번 처리한다 | 재시작 재전송을 끄고, 실패로 확정된 이벤트만 한 서버에서 다시 보낸다 |
+
+공통된 기준은 **서버는 언제든 늘거나 사라질 수 있다**는 것이다. 그래서 공유해야 하는 상태는 공유 저장소(MySQL·Redis)에
+두고, 한 번만 일어나야 하는 일은 공유 저장소의 락으로 하나를 고른다. 채팅의 서버 간 전달은 로컬에서 서버 2대를 띄워
+재현했다([`deploy/chat-test/`](deploy/chat-test/README.md)).
+
 ---
 
 ## API 개요
 
-**24개 컨트롤러, 117개 API**, 전 경로 `/api/v1` 아래. 기존 레이어드 구조와 경로·JSON이 같다. 인증은 `Authorization: Bearer <accessToken>`.
+**REST 컨트롤러 24개, 118개 API**, 전 경로 `/api/v1` 아래. 기존 레이어드 구조의 117개와 경로·JSON이 같고, 매장 채팅
+조회 1개가 더해졌다. 인증은 `Authorization: Bearer <accessToken>`. 채팅 전송·수정·삭제와 실시간 수신은 REST가 아니라
+WebSocket(`/ws`, STOMP)이다.
 
 | 영역 | 기본 경로 | 주요 기능 |
 |---|---|---|
@@ -507,6 +554,7 @@ public static final int MINOR_MAX_WEEKLY_WORK_MINUTES = 35 * 60;   // 연소자
 | 매뉴얼 | `/stores/{id}/manuals` | CRUD, 이미지 업로드 |
 | 발주(거래처) | `/stores/{id}/suppliers` | 발주(거래처) CRUD, 품목 CRUD |
 | 원가 | `/stores/{id}/menus`, `/menu-ingredients` | 재료·메뉴·레시피, 원가율 |
+| 채팅 | `/stores/{id}/chat/messages` | 이전 메시지 조회(커서). 전송·수정·삭제·수신은 STOMP `/app/stores/{id}/chat.*`, `/topic/stores/{id}/chat` |
 | AI 상담 | `/labor-qa` | 단발 질문, 세션 생성·대화·삭제 |
 | 지식베이스 | `/labor-qa/admin` | 문서 적재 (관리자 토큰 필요) |
 
@@ -593,7 +641,7 @@ curl -X POST -H "Authorization: Bearer $TOKEN" -H "X-Admin-Token: $ADMIN_INGEST_
 SPRING_PROFILES_ACTIVE=localdb DB_PASSWORD=... ./gradlew build   # Docker가 없으면 로컬 MySQL로
 ```
 
-**테스트 226개.** 단위 테스트 외에 다음을 실제 DB에 붙여 확인한다. 중요한 것은 **일부러 코드를 망가뜨려 실패하는지도
+**테스트 296개.** 단위 테스트 외에 다음을 실제 DB·Redis에 붙여 확인한다. 중요한 것은 **일부러 코드를 망가뜨려 실패하는지도
 확인했다.**
 
 | 확인 대상 | 방법 | 깨 봤을 때 |
@@ -604,6 +652,8 @@ SPRING_PROFILES_ACTIVE=localdb DB_PASSWORD=... ./gradlew build   # Docker가 없
 | **경계** | 다른 서비스 core 의존(빌드), 순환(Modulith), 서비스 안 패키지 방향(ArchUnit) | 역방향 참조를 넣으면 실패 |
 | **API 문서** | Swagger 문서에 118개 API(기존 117개 + 채팅 조회)가 모두 실리는지 | — |
 | **채팅** | 실제 포트에 WebSocket으로 붙어 인증·구독 권한·두 사람 수신·오류 분리·Redis 경유 전달을 본다 | 발행과 로컬 전송을 함께 하면 "한 번만 받는다" 테스트가 실패 |
+| **채팅방** | 매장 생성 직후 방이 있는지, 기존 매장 채우기가 두 번 돌아도 방이 하나인지, 완전 삭제 때 함께 지워지는지 | — |
+| **서버 2대** | 두 번째 서버의 락 획득이 막히는지, 예약 작업이 락 아래서 도는지, 두 서버의 호출 제한이 한 숫자로 세지는지 | — |
 
 > N+1과 동시성 결함은 **코드를 읽어서는 드러나지 않고** 데이터 두어 건으로는 체감되지 않는다.
 > 그래서 재현 조건을 테스트가 직접 만든다.
@@ -612,25 +662,42 @@ SPRING_PROFILES_ACTIVE=localdb DB_PASSWORD=... ./gradlew build   # Docker가 없
 
 ## 배포
 
+지금은 **수동 배포**다. 서버 2대에 같은 jar를 한 대씩 올린다. 그림의 GitHub Actions → ECR → SSM 자동 배포는 전환
+예정이다.
+
 ```bash
-./gradlew :app:bootJar
-scp app/build/libs/app-0.0.1-SNAPSHOT.jar ubuntu@<host>:/tmp/albam.jar
-# 서버에서: mv → chown → systemctl restart albam
+./gradlew build                 # 테스트까지 (Docker 필요)
+./gradlew :app:bootJar          # app/build/libs/app-0.0.1-SNAPSHOT.jar
 ```
 
-**빌드는 로컬에서 한다.** 작은 인스턴스에서 Gradle을 돌리면 메모리가 모자란다.
-systemd 유닛은 [`deploy/systemd/`](deploy/systemd/)에 있다. 서비스 이름·계정·경로(`albam`)는 기존 서버 설정을 그대로
-쓰려고 옛 이름을 유지한다.
+1. jar를 **비공개** 배포용 S3 버킷에 올린다. 앱 이미지를 공개 URL로 내보내는 버킷에는 올리지 않는다.
+2. 각 서버가 SSM으로 jar를 내려받고 sha256을 대조한다. 여기까지는 서비스에 영향이 없다.
+3. **한 대씩** 바꾼다. 한 대가 재시작하는 동안 ALB가 다른 한 대로 보낸다.
+   ```bash
+   sudo cp -p /opt/albam/albam.jar /opt/albam/albam.jar.prev       # 롤백용
+   sudo install -o albam -g albam -m 644 /tmp/albam.jar /opt/albam/albam.jar
+   sudo systemctl restart albam
+   curl -s localhost:8080/health                                     # {"status":"UP"}
+   ```
+   먼저 뜬 서버가 Flyway 마이그레이션을 적용하고, 다음 서버는 건너뛴다. ALB에서 healthy가 된 뒤 다음 서버로 넘어간다.
+4. 새벽 4~5시(예약 작업 시간)는 피한다.
+
+**빌드는 로컬에서 한다.** 작은 인스턴스에서 Gradle을 돌리면 메모리가 모자란다. systemd 유닛과 환경 파일 예시는
+[`deploy/systemd/`](deploy/systemd/)에 있다. 서비스 이름·계정·경로(`albam`)는 기존 서버 설정을 그대로 쓰려고 옛 이름을
+유지한다. 서버를 늘리거나 채팅을 처음 배포할 때의 체크리스트는 [`docs/chat-deployment.md`](docs/chat-deployment.md)에 있다.
 
 > **`APP_FRONTEND_URL`을 빠뜨리면 조용히 깨진다.** 기본값이 `localhost:5173`이라 기동은 되지만, 비밀번호 재설정 메일이 사용자 자기 PC를 가리키는 링크를 담아 나간다. 재설정 폼은 그 링크로만 갈 수 있어 계정 복구가 막힌다.
 
 > **`COOKIE_SECURE=true`** 가 아니면 HTTPS에서 리프레시 쿠키가 나가지 않아 로그인이 통째로 깨진다.
 
-**운영 상태 확인** — ALB 헬스체크는 앱 상태와 DB만 보는 `/health`(8080)다. 상세 상태(Actuator)는 8081 루프백
-전용이라 ALB로는 닿지 않는다.
+> **`SERVER_ID`는 서버마다 다르게.** 채팅 연결 로그가 어느 서버에서 났는지 가르는 값이다. systemd에는 `HOSTNAME`이 없어서
+> 비우면 두 서버 모두 `local`로 찍힌다.
+
+**운영 상태 확인** — ALB 헬스체크는 앱 상태와 DB만 보는 `/health`(8080)다. 상세 상태(Actuator, Redis 포함)는 8081
+루프백 전용이라 ALB로는 닿지 않는다.
 
 ```bash
-curl localhost:8081/actuator/health    # 서버에 SSH로 들어가서
+curl localhost:8081/actuator/health    # 서버에서 (SSM 세션 또는 SSM 원격 명령)
 ```
 
 ---
@@ -644,7 +711,7 @@ curl localhost:8081/actuator/health    # 서버에 SSH로 들어가서
 | [`docs/design/`](docs/design/) | 서비스별 설계와 옮기며 알게 된 것 (store · workforce · operations) |
 | [`docs/http/`](docs/http/) | 흐름별 curl 스크립트 |
 | [`docs/chat-architecture.md`](docs/chat-architecture.md) | 매장 단체 채팅(STOMP + Redis Pub/Sub)의 흐름과 설계 이유 |
-| [`docs/chat-deployment.md`](docs/chat-deployment.md) | ALB + EC2 2대 + ElastiCache로 옮길 때 할 일 |
+| [`docs/chat-deployment.md`](docs/chat-deployment.md) | 채팅·서버 2대 배포 체크리스트 (ALB, ElastiCache, 환경 변수, 순차 배포) |
 | [`deploy/chat-test/`](deploy/chat-test/README.md) | 채팅을 서버 2대로 로컬 재현 (docker compose) |
 
 ---
